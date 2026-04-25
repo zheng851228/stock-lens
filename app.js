@@ -171,6 +171,8 @@ const elements = {
   cheapness: document.querySelector("#cheapness"),
   riskLabel: document.querySelector("#riskLabel"),
   flowList: document.querySelector("#flowList"),
+  profileStatus: document.querySelector("#profileStatus"),
+  profileGrid: document.querySelector("#profileGrid"),
   institutionStatus: document.querySelector("#institutionStatus"),
   buyMeter: document.querySelector("#buyMeter"),
   sellMeter: document.querySelector("#sellMeter"),
@@ -191,6 +193,13 @@ function formatMoney(stock, value) {
     minimumFractionDigits: value >= 100 ? 0 : 2,
     maximumFractionDigits: value >= 100 ? 0 : 2
   })}`;
+}
+
+function formatPlainNumber(value) {
+  if (!hasNumber(value)) return "N/A";
+  return value.toLocaleString("zh-TW", {
+    maximumFractionDigits: value >= 1000 ? 0 : 2
+  });
 }
 
 function clamp(value, min, max) {
@@ -330,6 +339,28 @@ function renderMetrics(stock) {
     .join("");
 }
 
+function renderProfile(stock) {
+  const items = [
+    ["商品類型", stock.assetType || "N/A", stock.exchange || "未標示"],
+    ["交易所", stock.exchange || "N/A", stock.source || "未標示"],
+    ["幣別", stock.currency || "N/A", stock.quoteDate ? `報價 ${formatQuoteTimestamp(stock)}` : "即時或延遲報價"],
+    ["開盤", hasNumber(stock.open) ? formatMoney(stock, stock.open) : "N/A", hasNumber(stock.previousClose) ? `昨收 ${formatMoney(stock, stock.previousClose)}` : "昨收 N/A"],
+    ["成交量", formatPlainNumber(stock.volume), hasNumber(stock.averageVolume) ? `均量 ${formatPlainNumber(stock.averageVolume)}` : "均量 N/A"],
+    ["基本面來源", stock.fundamentalsSource || "N/A", stock.fundamentalsLive ? "可用" : "目前缺資料"]
+  ];
+
+  elements.profileStatus.textContent = stock.assetType || "基本資料";
+  elements.profileGrid.innerHTML = items
+    .map(([label, value, hint]) => `
+      <div class="metric">
+        <span>${label}</span>
+        <strong>${value}</strong>
+        <small>${hint}</small>
+      </div>
+    `)
+    .join("");
+}
+
 async function renderStock(symbol) {
   const normalized = symbol.trim().toUpperCase();
   const baseStock = sampleStocks[normalized] || {
@@ -387,6 +418,7 @@ async function renderStock(symbol) {
 
   renderFlow(stock.flow);
   renderMetrics(stock);
+  renderProfile(stock);
 
   document.querySelectorAll("[data-symbol]").forEach((button) => {
     button.classList.toggle("active", button.dataset.symbol === normalized);

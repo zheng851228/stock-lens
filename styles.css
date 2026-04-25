@@ -423,6 +423,12 @@ meter {
   gap: 10px;
 }
 
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .metric {
   min-height: 72px;
   padding: 12px;
@@ -435,6 +441,13 @@ meter {
   display: block;
   margin-top: 8px;
   font-size: 19px;
+}
+
+.metric small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .positive {
@@ -482,7 +495,8 @@ meter {
 
   .watchlist,
   .action-grid,
-  .metric-table {
+  .metric-table,
+  .profile-grid {
     grid-template-columns: 1fr;
   }
 
