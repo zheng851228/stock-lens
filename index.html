@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 股票資金流分析</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace" aria-label="AI 股票分析工作台">
+        <aside class="sidebar">
+          <div class="brand">
+            <div class="brand-mark">AI</div>
+            <div>
+              <p>Stock Lens</p>
+              <span>價格 · 營收 · 資金流</span>
+            </div>
+          </div>
+
+          <form class="search" id="stockForm">
+            <label for="symbolInput">股票代碼</label>
+            <div class="search-row">
+              <input id="symbolInput" type="text" value="NVDA" autocomplete="off" placeholder="例如 NVDA、AAPL、2330.TW" />
+              <button type="submit" aria-label="查詢">
+                <span>⌕</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="watchlist" aria-label="快速觀察清單">
+            <button type="button" data-symbol="NVDA" class="active">NVDA</button>
+            <button type="button" data-symbol="AAPL">AAPL</button>
+            <button type="button" data-symbol="TSM">TSM</button>
+            <button type="button" data-symbol="2330.TW">2330.TW</button>
+            <button type="button" data-symbol="0050.TW">0050.TW</button>
+          </div>
+
+          <div class="data-note">
+            <strong>資料狀態</strong>
+            <p id="dataStatus">載入中</p>
+          </div>
+        </aside>
+
+        <section class="content">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">AI 股票儀表板</p>
+              <h1 id="companyName">NVIDIA Corporation</h1>
+              <div class="meta">
+                <span id="tickerText">NVDA</span>
+                <span id="sectorText">半導體</span>
+                <span id="updatedText">更新中</span>
+              </div>
+            </div>
+            <div class="verdict" id="verdictBadge">觀察</div>
+          </header>
+
+          <section class="quote-grid">
+            <article class="quote-panel primary-panel">
+              <div class="panel-label">即時參考價</div>
+              <div class="price-row">
+                <strong id="priceText">$0.00</strong>
+                <span id="changeText">0.00%</span>
+              </div>
+              <div class="range-track" aria-hidden="true">
+                <span id="rangeFill"></span>
+              </div>
+              <div class="range-labels">
+                <span id="lowText">低點</span>
+                <span id="highText">高點</span>
+              </div>
+            </article>
+
+            <article class="quote-panel">
+              <div class="panel-label">估值分數</div>
+              <strong id="valueScore">0</strong>
+              <span id="valueHint">等待分析</span>
+            </article>
+
+            <article class="quote-panel">
+              <div class="panel-label">營收成長率</div>
+              <strong id="revenueGrowth">0%</strong>
+              <span id="revenueHint">近四季年增</span>
+            </article>
+
+            <article class="quote-panel">
+              <div class="panel-label">大戶籌碼</div>
+              <strong id="smartMoney">中性</strong>
+              <span id="smartMoneyHint">法人與大單估計</span>
+            </article>
+          </section>
+
+          <section class="analysis-layout">
+            <article class="analysis-card ai-card">
+              <div class="section-title">
+                <span>AI 評論</span>
+                <small id="riskLabel">風險評估</small>
+              </div>
+              <p id="aiComment">正在整理價格、營收與資金流訊號。</p>
+              <div class="action-grid">
+                <div>
+                  <span>長期持有</span>
+                  <strong id="longTerm">待觀察</strong>
+                </div>
+                <div>
+                  <span>短期波段</span>
+                  <strong id="shortTerm">待觀察</strong>
+                </div>
+                <div>
+                  <span>便宜程度</span>
+                  <strong id="cheapness">待觀察</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="analysis-card">
+              <div class="section-title">
+                <span>資金流向</span>
+                <small>類股熱度</small>
+              </div>
+              <div class="flow-list" id="flowList"></div>
+            </article>
+          </section>
+
+          <section class="bottom-grid">
+            <article class="analysis-card">
+              <div class="section-title">
+                <span>大戶買賣狀態</span>
+                <small id="institutionStatus">估計中</small>
+              </div>
+              <div class="bars">
+                <div>
+                  <span>買盤</span>
+                  <meter id="buyMeter" min="0" max="100" value="50"></meter>
+                </div>
+                <div>
+                  <span>賣壓</span>
+                  <meter id="sellMeter" min="0" max="100" value="50"></meter>
+                </div>
+                <div>
+                  <span>量能</span>
+                  <meter id="volumeMeter" min="0" max="100" value="50"></meter>
+                </div>
+              </div>
+            </article>
+
+            <article class="analysis-card">
+              <div class="section-title">
+                <span>關鍵指標</span>
+                <small>估值與品質</small>
+              </div>
+              <div class="metric-table" id="metricTable"></div>
+            </article>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
