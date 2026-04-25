@@ -280,6 +280,116 @@ async function fetchYahooQuote(symbol) {
   return { quote, summary };
 }
 
+async function fetchFinnhubStock(symbol, base) {
+  const apiKey = process.env.FINNHUB_API_KEY;
+  if (!apiKey) throw new Error("Finnhub API key not configured");
+
+  const [quote, profile, basicFinancials] = await Promise.all([
+    fetchJson(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${encodeURIComponent(apiKey)}`),
+    fetchJson(`https://finnhub.io/api/v1/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${encodeURIComponent(apiKey)}`),
+    fetchJson(`https://finnhub.io/api/v1/stock/metric?symbol=${encodeURIComponent(symbol)}&metric=all&token=${encodeURIComponent(apiKey)}`)
+  ]);
+
+  const price = sanitizeNumericField(quote.c);
+  if (!price || price <= 0) {
+    throw new Error("Finnhub quote unavailable");
+  }
+
+  const metrics = basicFinancials.metric || {};
+  const marketQuote = {
+    regularMarketVolume: sanitizeNumericField(quote.v) || 0,
+    averageDailyVolume3Month: sanitizeNumericField(metrics["3MonthAverageTradingVolume"]) || sanitizeNumericField(quote.v) || 1
+  };
+  const changePct = sanitizeNumericField(quote.dp) ?? base.changePct;
+  const moneyFlow = enrichMoneyFlow({ ...base, changePct }, marketQuote);
+  const sector = profile.finnhubIndustry || base.sector;
+
+  return {
+    ...base,
+    ...moneyFlow,
+    symbol,
+    name: profile.name || base.name,
+    sector,
+    currency: profile.currency || base.currency,
+    price,
+    changePct,
+    dayLow: sanitizeNumericField(quote.l) ?? base.dayLow,
+    dayHigh: sanitizeNumericField(quote.h) ?? base.dayHigh,
+    revenueGrowth: sanitizeNumericField(metrics.revenueGrowthTTMYoy),
+    grossMargin: sanitizeNumericField(metrics.grossMarginTTM),
+    pe: sanitizeNumericField(metrics.peTTM),
+    forwardPe: sanitizeNumericField(metrics.peBasicExclExtraTTM) ?? sanitizeNumericField(metrics.currentEvFreeCashFlowTTM),
+    debtRatio: sanitizeNumericField(metrics.totalDebtToEquityQuarterly),
+    flow: sectorFlows[sector] || base.flow,
+    fetchedAt: new Date().toISOString(),
+    live: true,
+    source: "Finnhub API",
+    fundamentalsSource: Object.keys(metrics).length ? "Finnhub Basic Financials" : null,
+    fundamentalsLive: Object.keys(metrics).length > 0,
+    warnings: []
+  };
+}
+
+async function fetchFmpFundamentals(symbol) {
+  const apiKey = process.env.FMP_API_KEY;
+  if (!apiKey) throw new Error("FMP API key not configured");
+
+  const metricsUrl = `https://financialmodelingprep.com/stable/key-metrics-ttm?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(apiKey)}`;
+  const profileUrl = `https://financialmodelingprep.com/stable/profile?symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(apiKey)}`;
+  const growthUrl = `https://financialmodelingprep.com/stable/financial-growth?symbol=${encodeURIComponent(symbol)}&limit=1&apikey=${encodeURIComponent(apiKey)}`;
+
+  const [metricsList, profileList, growthList] = await Promise.all([
+    fetchJson(metricsUrl),
+    fetchJson(profileUrl),
+    fetchJson(growthUrl)
+  ]);
+
+  const metrics = Array.isArray(metricsList) ? metricsList[0] : null;
+  const profile = Array.isArray(profileList) ? profileList[0] : null;
+  const growth = Array.isArray(growthList) ? growthList[0] : null;
+
+  if (!metrics && !profile && !growth) {
+    throw new Error("FMP fundamentals unavailable");
+  }
+
+  return {
+    name: profile?.companyName || null,
+    sector: profile?.sector || null,
+    currency: profile?.currency || null,
+    revenueGrowth: sanitizeNumericField(growth?.revenueGrowth),
+    grossMargin: sanitizeNumericField(metrics?.grossProfitMarginTTM),
+    pe: sanitizeNumericField(metrics?.peRatioTTM),
+    forwardPe: sanitizeNumericField(metrics?.peRatioTTM),
+    debtRatio: sanitizeNumericField(metrics?.debtToEquityTTM),
+    fundamentalsSource: "FMP key metrics/growth",
+    fundamentalsLive: true
+  };
+}
+
+async function maybeEnrichWithFmp(symbol, stock, warnings) {
+  if (stock.fundamentalsLive) return stock;
+
+  try {
+    const fmp = await fetchFmpFundamentals(symbol);
+    return {
+      ...stock,
+      name: fmp.name || stock.name,
+      sector: fmp.sector || stock.sector,
+      currency: fmp.currency || stock.currency,
+      revenueGrowth: fmp.revenueGrowth,
+      grossMargin: fmp.grossMargin,
+      pe: fmp.pe,
+      forwardPe: fmp.forwardPe,
+      debtRatio: fmp.debtRatio,
+      fundamentalsSource: fmp.fundamentalsSource,
+      fundamentalsLive: fmp.fundamentalsLive
+    };
+  } catch (error) {
+    warnings.push(error.message);
+    return stock;
+  }
+}
+
 async function fetchStooqQuote(symbol) {
   const stooqSymbol = symbol.includes(".TW")
     ? `${symbol.replace(".TW", "")}.tw`
@@ -423,7 +533,7 @@ async function getStockData(symbol) {
   if (symbol.endsWith(".TW")) {
     try {
       const quote = await fetchTwseQuote(symbol);
-      return {
+      return await maybeEnrichWithFmp(symbol, {
         ...base,
         symbol,
         name: quote.name || base.name,
@@ -444,10 +554,16 @@ async function getStockData(symbol) {
         fundamentalsSource: null,
         fundamentalsLive: false,
         warnings
-      };
+      }, warnings);
     } catch (error) {
       warnings.push(error.message);
     }
+  }
+
+  try {
+    return await fetchFinnhubStock(symbol, base);
+  } catch (error) {
+    warnings.push(error.message);
   }
 
   try {
@@ -464,7 +580,7 @@ async function getStockData(symbol) {
     );
     const sector = profile.sector || base.sector;
 
-    return {
+    return await maybeEnrichWithFmp(symbol, {
       ...base,
       ...moneyFlow,
       symbol,
@@ -487,7 +603,7 @@ async function getStockData(symbol) {
       fundamentalsSource: Object.keys(summary).length ? "Yahoo Finance Summary" : null,
       fundamentalsLive: Object.keys(summary).length > 0,
       warnings
-    };
+    }, warnings);
   } catch (error) {
     warnings.push(error.message);
   }
@@ -495,7 +611,7 @@ async function getStockData(symbol) {
   try {
     const quote = await fetchStooqQuote(symbol);
     const changePct = quote.open > 0 ? ((quote.price - quote.open) / quote.open) * 100 : base.changePct;
-    return {
+    return await maybeEnrichWithFmp(symbol, {
       ...base,
       symbol,
       price: quote.price,
@@ -513,12 +629,12 @@ async function getStockData(symbol) {
       fundamentalsSource: null,
       fundamentalsLive: false,
       warnings
-    };
+    }, warnings);
   } catch (error) {
     warnings.push(error.message);
   }
 
-  return {
+  const demoFallback = {
     ...base,
     symbol,
     fetchedAt: new Date().toISOString(),
@@ -528,6 +644,8 @@ async function getStockData(symbol) {
     fundamentalsLive: false,
     warnings
   };
+
+  return await maybeEnrichWithFmp(symbol, demoFallback, warnings);
 }
 
 async function handleApi(request, response, pathname) {
