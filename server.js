@@ -211,6 +211,11 @@ function numberOrFallback(value, fallback) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function sanitizeNumericField(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function getBaseStock(symbol) {
   return sampleStocks[symbol] || {
     ...sampleStocks.NVDA,
@@ -324,7 +329,8 @@ async function fetchTwseQuote(symbol) {
         dayLow: numberOrFallback(quote.l, price),
         changePct: previousClose > 0 ? ((price - previousClose) / previousClose) * 100 : 0,
         name: quote.nf || quote.n || symbol,
-        source: "TWSE MIS API"
+        source: "TWSE MIS API",
+        quotedAt: quote.d && quote.t ? `${quote.d} ${quote.t}` : null
       };
     } catch {
       continue;
@@ -389,15 +395,17 @@ async function fetchAlphaVantageStock(symbol, base) {
     changePct: numberOrFallback(changePercent, base.changePct),
     dayLow: numberOrFallback(quote["04. low"], base.dayLow),
     dayHigh: numberOrFallback(quote["03. high"], base.dayHigh),
-    revenueGrowth: numberOrFallback(revenueGrowthRaw * 100, base.revenueGrowth),
-    grossMargin: numberOrFallback(grossMargin, base.grossMargin),
-    pe: numberOrFallback(overview.PERatio, base.pe),
-    forwardPe: numberOrFallback(overview.ForwardPE, base.forwardPe),
-    debtRatio: base.debtRatio,
+    revenueGrowth: sanitizeNumericField(revenueGrowthRaw * 100),
+    grossMargin: sanitizeNumericField(grossMargin),
+    pe: sanitizeNumericField(overview.PERatio),
+    forwardPe: sanitizeNumericField(overview.ForwardPE),
+    debtRatio: null,
     flow: sectorFlows[sector] || base.flow,
     fetchedAt: new Date().toISOString(),
     live: true,
     source: "Alpha Vantage API",
+    fundamentalsSource: "Alpha Vantage OVERVIEW",
+    fundamentalsLive: true,
     warnings: []
   };
 }
@@ -424,9 +432,17 @@ async function getStockData(symbol) {
         dayLow: quote.dayLow,
         dayHigh: quote.dayHigh,
         changePct: quote.changePct,
+        revenueGrowth: null,
+        grossMargin: null,
+        pe: null,
+        forwardPe: null,
+        debtRatio: null,
         fetchedAt: new Date().toISOString(),
         live: true,
         source: quote.source,
+        quoteDate: quote.quotedAt,
+        fundamentalsSource: null,
+        fundamentalsLive: false,
         warnings
       };
     } catch (error) {
@@ -459,15 +475,17 @@ async function getStockData(symbol) {
       changePct: numberOrFallback(quote.regularMarketChangePercent, base.changePct),
       dayLow: numberOrFallback(quote.regularMarketDayLow, base.dayLow),
       dayHigh: numberOrFallback(quote.regularMarketDayHigh, base.dayHigh),
-      revenueGrowth: numberOrFallback(financialData.revenueGrowth?.raw * 100, base.revenueGrowth),
-      grossMargin: numberOrFallback(financialData.grossMargins?.raw * 100, base.grossMargin),
-      pe: numberOrFallback(quote.trailingPE, base.pe),
-      forwardPe: numberOrFallback(quote.forwardPE || keyStats.forwardPE?.raw, base.forwardPe),
-      debtRatio: numberOrFallback(financialData.debtToEquity?.raw / 100, base.debtRatio),
+      revenueGrowth: sanitizeNumericField(financialData.revenueGrowth?.raw * 100),
+      grossMargin: sanitizeNumericField(financialData.grossMargins?.raw * 100),
+      pe: sanitizeNumericField(quote.trailingPE),
+      forwardPe: sanitizeNumericField(quote.forwardPE || keyStats.forwardPE?.raw),
+      debtRatio: sanitizeNumericField(financialData.debtToEquity?.raw / 100),
       flow: sectorFlows[sector] || base.flow,
       fetchedAt: new Date().toISOString(),
       live: true,
       source: "Yahoo Finance API",
+      fundamentalsSource: Object.keys(summary).length ? "Yahoo Finance Summary" : null,
+      fundamentalsLive: Object.keys(summary).length > 0,
       warnings
     };
   } catch (error) {
@@ -484,9 +502,16 @@ async function getStockData(symbol) {
       dayLow: quote.dayLow,
       dayHigh: quote.dayHigh,
       changePct,
+      revenueGrowth: null,
+      grossMargin: null,
+      pe: null,
+      forwardPe: null,
+      debtRatio: null,
       fetchedAt: new Date().toISOString(),
       live: true,
       source: quote.source,
+      fundamentalsSource: null,
+      fundamentalsLive: false,
       warnings
     };
   } catch (error) {
@@ -499,6 +524,8 @@ async function getStockData(symbol) {
     fetchedAt: new Date().toISOString(),
     live: false,
     source: "Demo fallback",
+    fundamentalsSource: "Demo fallback",
+    fundamentalsLive: false,
     warnings
   };
 }

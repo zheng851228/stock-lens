@@ -197,7 +197,14 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function hasNumber(value) {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function getValueScore(stock) {
+  if (!hasNumber(stock.revenueGrowth) || !hasNumber(stock.grossMargin) || !hasNumber(stock.forwardPe)) {
+    return null;
+  }
   const growthScore = clamp(stock.revenueGrowth * 1.25, 0, 45);
   const marginScore = clamp(stock.grossMargin * 0.35, 0, 25);
   const valuationPenalty = clamp((stock.forwardPe - 18) * 1.25, 0, 28);
@@ -208,6 +215,15 @@ function getValueScore(stock) {
 function getLabels(stock, score) {
   const netBuy = stock.institutionalBuy - stock.institutionalSell;
   const momentum = stock.changePct + (stock.volumePower - 50) / 12;
+  if (score === null) {
+    return {
+      cheapness: "資料不足",
+      longTerm: "缺基本面資料",
+      shortTerm: momentum > 2 ? "短線偏強" : momentum < -1 ? "短線偏弱" : "區間整理",
+      verdict: "僅供觀察",
+      risk: "基本面未驗證"
+    };
+  }
   const cheapness = score >= 78 ? "偏便宜" : score >= 60 ? "合理偏上" : "偏貴";
   const longTerm = score >= 72 && stock.revenueGrowth > 15 ? "可分批長抱" : score >= 55 ? "觀察持有" : "保守看待";
   const shortTerm = momentum > 2 ? "偏多波段" : momentum < -1 ? "震盪偏弱" : "區間整理";
@@ -220,6 +236,11 @@ function buildComment(stock, score, labels) {
   const netBuy = stock.institutionalBuy - stock.institutionalSell;
   const pricePosition = ((stock.price - stock.dayLow) / (stock.dayHigh - stock.dayLow)) * 100;
   const flowLeader = stock.flow.slice().sort((a, b) => b[1] - a[1])[0][0];
+  if (score === null) {
+    const moneyText = netBuy > 15 ? "目前買盤動能偏強" : netBuy < -8 ? "目前賣壓偏重" : "目前多空拉鋸";
+    const dataText = stock.fundamentalsLive ? "基本面欄位仍不完整" : "目前只有報價資料，沒有同步取得可信的營收與估值欄位";
+    return `${stock.name} 目前可確認的是價格與區間表現，${moneyText}，資金熱度偏向 ${flowLeader}。但 ${dataText}，所以「便宜或昂貴」和長期持有判斷先不要下太滿，短線僅能當作盤面觀察。`;
+  }
   const valuationText = stock.forwardPe > 35 ? "本益比已反映較高期待" : "估值仍在可討論區間";
   const moneyText = netBuy > 15 ? "大戶買盤明顯大於賣壓" : netBuy < -8 ? "大戶偏向調節" : "籌碼呈現中性整理";
   const positionText = pricePosition > 75 ? "目前接近日內高檔，短線追價要留意震盪" : pricePosition < 35 ? "價格靠近日內低位，適合觀察承接力" : "價格位於日內中段，等待突破或回測更清楚";
@@ -273,10 +294,10 @@ function renderFlow(flow) {
 
 function renderMetrics(stock) {
   const metrics = [
-    ["Forward P/E", stock.forwardPe.toFixed(1)],
-    ["本益比", stock.pe.toFixed(1)],
-    ["毛利率", stock.grossMargin ? `${stock.grossMargin.toFixed(1)}%` : "ETF"],
-    ["負債比", stock.debtRatio ? `${stock.debtRatio.toFixed(0)}%` : "低"]
+    ["Forward P/E", hasNumber(stock.forwardPe) ? stock.forwardPe.toFixed(1) : "N/A"],
+    ["本益比", hasNumber(stock.pe) ? stock.pe.toFixed(1) : "N/A"],
+    ["毛利率", hasNumber(stock.grossMargin) ? `${stock.grossMargin.toFixed(1)}%` : "N/A"],
+    ["負債比", hasNumber(stock.debtRatio) ? `${stock.debtRatio.toFixed(0)}%` : "N/A"]
   ];
 
   elements.metricTable.innerHTML = metrics
@@ -316,19 +337,19 @@ async function renderStock(symbol) {
   elements.sectorText.textContent = stock.sector;
   elements.updatedText.textContent = new Date().toLocaleString("zh-TW", { hour12: false });
   elements.verdictBadge.textContent = labels.verdict;
-  elements.verdictBadge.style.background = score >= 78 ? "var(--green)" : score >= 62 ? "var(--yellow)" : "var(--red)";
+  elements.verdictBadge.style.background = score === null ? "var(--cyan)" : score >= 78 ? "var(--green)" : score >= 62 ? "var(--yellow)" : "var(--red)";
   elements.priceText.textContent = formatMoney(stock, stock.price);
   elements.changeText.textContent = `${stock.changePct >= 0 ? "+" : ""}${stock.changePct.toFixed(2)}%`;
   elements.changeText.className = stock.changePct >= 0 ? "positive" : "negative";
   elements.rangeFill.style.width = `${rangePct}%`;
   elements.lowText.textContent = formatMoney(stock, stock.dayLow);
   elements.highText.textContent = formatMoney(stock, stock.dayHigh);
-  elements.valueScore.textContent = score;
-  elements.valueHint.textContent = score >= 78 ? "價格相對有吸引力" : score >= 60 ? "估值尚可" : "需要等待更好價格";
-  elements.revenueGrowth.textContent = `${stock.revenueGrowth.toFixed(1)}%`;
-  elements.revenueHint.textContent = stock.revenueGrowth > 20 ? "營收動能強" : "成長需追蹤";
+  elements.valueScore.textContent = score === null ? "N/A" : score;
+  elements.valueHint.textContent = score === null ? "缺少可信基本面資料" : score >= 78 ? "價格相對有吸引力" : score >= 60 ? "估值尚可" : "需要等待更好價格";
+  elements.revenueGrowth.textContent = hasNumber(stock.revenueGrowth) ? `${stock.revenueGrowth.toFixed(1)}%` : "N/A";
+  elements.revenueHint.textContent = hasNumber(stock.revenueGrowth) ? (stock.revenueGrowth > 20 ? "營收動能強" : "成長需追蹤") : "目前無即時營收資料";
   elements.smartMoney.textContent = netBuy > 12 ? "偏買超" : netBuy < -8 ? "偏賣超" : "中性";
-  elements.smartMoneyHint.textContent = `買 ${stock.institutionalBuy}% / 賣 ${stock.institutionalSell}%`;
+  elements.smartMoneyHint.textContent = `買 ${stock.institutionalBuy}% / 賣 ${stock.institutionalSell}%（估算）`;
   elements.aiComment.textContent = buildComment(stock, score, labels);
   elements.longTerm.textContent = labels.longTerm;
   elements.shortTerm.textContent = labels.shortTerm;
@@ -339,7 +360,7 @@ async function renderStock(symbol) {
   elements.sellMeter.value = stock.institutionalSell;
   elements.volumeMeter.value = stock.volumePower;
   elements.dataStatus.textContent = stock.live
-    ? `已串接 ${stock.source}；大戶買賣與類股資金流為成交量、漲跌與產業熱度估算。`
+    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${stock.quoteDate}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "目前沒有同步取得可信基本面，營收與估值欄位不做硬推估。"}`
     : stock.source === "公開展示模式"
       ? "目前是可分享的公開展示頁，價格與分析使用示範資料；本機版會串接即時財經 API。"
       : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${stock.warnings[0]}` : ""}`;
