@@ -178,7 +178,9 @@ const elements = {
   metricTable: document.querySelector("#metricTable")
 };
 
-const API_BASE = window.location.protocol === "file:" ? "http://127.0.0.1:4173" : "";
+const isLocalRuntime = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const isFilePreview = window.location.protocol === "file:";
+const API_BASE = isFilePreview ? "http://127.0.0.1:4173" : isLocalRuntime ? "" : null;
 
 function currencySymbol(currency) {
   return currency === "TWD" ? "NT$" : "$";
@@ -226,6 +228,17 @@ function buildComment(stock, score, labels) {
 }
 
 async function fetchStockFromApi(symbol, baseStock) {
+  if (API_BASE === null) {
+    return {
+      ...baseStock,
+      symbol,
+      fetchedAt: new Date().toISOString(),
+      live: false,
+      source: "公開展示模式",
+      warnings: ["Public deploy has no local finance API; using demo data."]
+    };
+  }
+
   try {
     const url = `${API_BASE}/api/stock/${encodeURIComponent(symbol)}`;
     const response = await fetch(url, { cache: "no-store" });
@@ -327,7 +340,9 @@ async function renderStock(symbol) {
   elements.volumeMeter.value = stock.volumePower;
   elements.dataStatus.textContent = stock.live
     ? `已串接 ${stock.source}；大戶買賣與類股資金流為成交量、漲跌與產業熱度估算。`
-    : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${stock.warnings[0]}` : ""}`;
+    : stock.source === "公開展示模式"
+      ? "目前是可分享的公開展示頁，價格與分析使用示範資料；本機版會串接即時財經 API。"
+      : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${stock.warnings[0]}` : ""}`;
 
   renderFlow(stock.flow);
   renderMetrics(stock);
