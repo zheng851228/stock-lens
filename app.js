@@ -201,6 +201,26 @@ function hasNumber(value) {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function formatQuoteTimestamp(stock) {
+  if (stock.quoteDate) {
+    const raw = String(stock.quoteDate).trim();
+    const match = raw.match(/^(\d{4})(\d{2})(\d{2})\s+(\d{2}:\d{2}:\d{2})$/);
+    if (match) {
+      return `${match[1]}/${match[2]}/${match[3]} ${match[4]}`;
+    }
+    return raw;
+  }
+
+  if (stock.fetchedAt) {
+    const date = new Date(stock.fetchedAt);
+    if (!Number.isNaN(date.getTime())) {
+      return `${date.toLocaleString("zh-TW", { hour12: false })} 抓取`;
+    }
+  }
+
+  return "更新中";
+}
+
 function getValueScore(stock) {
   if (!hasNumber(stock.revenueGrowth) || !hasNumber(stock.grossMargin) || !hasNumber(stock.forwardPe)) {
     return null;
@@ -335,7 +355,7 @@ async function renderStock(symbol) {
   elements.companyName.textContent = stock.name;
   elements.tickerText.textContent = normalized;
   elements.sectorText.textContent = stock.sector;
-  elements.updatedText.textContent = new Date().toLocaleString("zh-TW", { hour12: false });
+  elements.updatedText.textContent = formatQuoteTimestamp(stock);
   elements.verdictBadge.textContent = labels.verdict;
   elements.verdictBadge.style.background = score === null ? "var(--cyan)" : score >= 78 ? "var(--green)" : score >= 62 ? "var(--yellow)" : "var(--red)";
   elements.priceText.textContent = formatMoney(stock, stock.price);
@@ -360,7 +380,7 @@ async function renderStock(symbol) {
   elements.sellMeter.value = stock.institutionalSell;
   elements.volumeMeter.value = stock.volumePower;
   elements.dataStatus.textContent = stock.live
-    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${stock.quoteDate}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "目前沒有同步取得可信基本面，營收與估值欄位不做硬推估。"}`
+    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "目前沒有同步取得可信基本面，營收與估值欄位不做硬推估。"}`
     : stock.source === "公開展示模式"
       ? "目前是可分享的公開展示頁，價格與分析使用示範資料；本機版會串接即時財經 API。"
       : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${stock.warnings[0]}` : ""}`;
