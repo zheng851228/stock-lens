@@ -494,6 +494,14 @@ function numberWithFallback(value, fallback) {
   return hasNumber(value) ? value : fallback;
 }
 
+function normalizeUserSymbol(symbol) {
+  const normalized = symbol.trim().toUpperCase();
+  if (/^\d{4,6}$/.test(normalized)) {
+    return `${normalized}.TW`;
+  }
+  return normalized;
+}
+
 function normalizeStockForUi(stock, baseStock, symbol) {
   const price = numberWithFallback(stock.price, baseStock.price || 0);
   const previousClose = numberWithFallback(stock.previousClose, numberWithFallback(stock.open, price));
@@ -1197,9 +1205,10 @@ async function prefetchMiniCandles(items, stateMap, count = items.length) {
 }
 
 async function renderStock(symbol) {
-  const normalized = symbol.trim().toUpperCase();
+  const normalized = normalizeUserSymbol(symbol);
   const requestId = (renderRequestId += 1);
   activeSymbol = normalized;
+  elements.input.value = normalized;
   const baseStock = sampleStocks[normalized] || {
     ...sampleStocks.NVDA,
     name: normalized,
