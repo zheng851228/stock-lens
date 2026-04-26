@@ -319,6 +319,12 @@ const chartState = {
   resizeObserver: null
 };
 
+const MISSING_VALUE_TEXT = "資料不足";
+const MISSING_PERIOD_TEXT = "資料月份不足";
+const MISSING_FUNDAMENTALS_TEXT = "基本面資料不足";
+const MISSING_MONTHLY_REVENUE_TEXT = "月營收資料不足";
+const MISSING_REVENUE_HINT_TEXT = "即時營收資料不足";
+
 const elements = {
   form: document.querySelector("#stockForm"),
   input: document.querySelector("#symbolInput"),
@@ -448,8 +454,36 @@ function currencySymbol(currency) {
   return currency === "TWD" ? "NT$" : "$";
 }
 
+function formatMissingReason(reason) {
+  const message = String(reason || "").trim();
+  if (!message) return MISSING_VALUE_TEXT;
+
+  const replacements = [
+    ["Alpha Vantage API key not configured", "尚未設定 Alpha Vantage API key"],
+    ["Finnhub API key not configured", "尚未設定 Finnhub API key"],
+    ["FMP API key not configured", "尚未設定 FMP API key"],
+    ["Yahoo quote unavailable", "Yahoo 報價暫時不可用"],
+    ["Yahoo candles unavailable", "Yahoo 歷史日線暫時不可用"],
+    ["Finnhub quote unavailable", "Finnhub 報價暫時不可用"],
+    ["Finnhub candles unavailable", "Finnhub 歷史日線暫時不可用"],
+    ["TWSE quote unavailable", "TWSE 報價暫時不可用"],
+    ["TWSE candles unavailable", "TWSE 歷史日線暫時不可用"],
+    ["Stooq quote unavailable", "Stooq 報價暫時不可用"],
+    ["Stooq candles unavailable", "Stooq 歷史日線暫時不可用"],
+    ["HTTP 401", "上游 API 驗證失敗"],
+    ["Unexpected token", "上游資料格式異常"],
+    ["rate limit", "上游 API 額度已達上限"]
+  ];
+
+  for (const [needle, replacement] of replacements) {
+    if (message.includes(needle)) return replacement;
+  }
+
+  return message;
+}
+
 function formatMoney(stock, value) {
-  if (!hasNumber(value)) return "N/A";
+  if (!hasNumber(value)) return MISSING_VALUE_TEXT;
   return `${currencySymbol(stock.currency)}${value.toLocaleString("zh-TW", {
     minimumFractionDigits: value >= 100 ? 0 : 2,
     maximumFractionDigits: value >= 100 ? 0 : 2
@@ -457,24 +491,24 @@ function formatMoney(stock, value) {
 }
 
 function formatPlainNumber(value) {
-  if (!hasNumber(value)) return "N/A";
+  if (!hasNumber(value)) return MISSING_VALUE_TEXT;
   return value.toLocaleString("zh-TW", {
     maximumFractionDigits: value >= 1000 ? 0 : 2
   });
 }
 
 function formatPercent(value, digits = 2) {
-  if (!hasNumber(value)) return "N/A";
+  if (!hasNumber(value)) return MISSING_VALUE_TEXT;
   return `${value.toFixed(digits)}%`;
 }
 
 function formatMonthlyRevenue(value) {
-  if (!hasNumber(value)) return "N/A";
+  if (!hasNumber(value)) return MISSING_VALUE_TEXT;
   return `NT$${value.toLocaleString("zh-TW")}千元`;
 }
 
 function formatMarketCap(stock, value) {
-  if (!hasNumber(value)) return "N/A";
+  if (!hasNumber(value)) return MISSING_VALUE_TEXT;
   const isTwd = stock.currency === "TWD";
   const currency = isTwd ? "TWD" : "USD";
   const divisor = isTwd ? (value >= 1000000000000 ? 1000000000000 : 100000000) : 1000000000;
@@ -824,12 +858,12 @@ function renderFlow(flow) {
 
 function renderMetrics(stock) {
   const metrics = [
-    ["Forward P/E", hasNumber(stock.forwardPe) ? stock.forwardPe.toFixed(1) : "N/A"],
-    ["本益比", hasNumber(stock.pe) ? stock.pe.toFixed(1) : "N/A"],
-    ["股價淨值比", hasNumber(stock.pbRatio) ? stock.pbRatio.toFixed(2) : "N/A"],
+    ["Forward P/E", hasNumber(stock.forwardPe) ? stock.forwardPe.toFixed(1) : MISSING_VALUE_TEXT],
+    ["本益比", hasNumber(stock.pe) ? stock.pe.toFixed(1) : MISSING_VALUE_TEXT],
+    ["股價淨值比", hasNumber(stock.pbRatio) ? stock.pbRatio.toFixed(2) : MISSING_VALUE_TEXT],
     ["殖利率", formatPercent(stock.dividendYield, 2)],
-    ["毛利率", hasNumber(stock.grossMargin) ? `${stock.grossMargin.toFixed(1)}%` : "N/A"],
-    ["負債比", hasNumber(stock.debtRatio) ? `${stock.debtRatio.toFixed(0)}%` : "N/A"]
+    ["毛利率", hasNumber(stock.grossMargin) ? `${stock.grossMargin.toFixed(1)}%` : MISSING_VALUE_TEXT],
+    ["負債比", hasNumber(stock.debtRatio) ? `${stock.debtRatio.toFixed(0)}%` : MISSING_VALUE_TEXT]
   ];
 
   elements.metricTable.innerHTML = metrics
@@ -844,19 +878,19 @@ function renderMetrics(stock) {
 
 function renderProfile(stock) {
   const items = [
-    ["正式名稱", stock.legalName || stock.name || "N/A", stock.symbol || "未標示"],
-    ["商品類型", stock.assetType || "N/A", stock.exchange || "未標示"],
-    ["交易所", stock.exchange || "N/A", stock.source || "未標示"],
-    ["幣別", stock.currency || "N/A", stock.quoteDate ? `報價 ${formatQuoteTimestamp(stock)}` : "即時或延遲報價"],
-    ["開盤", hasNumber(stock.open) ? formatMoney(stock, stock.open) : "N/A", hasNumber(stock.previousClose) ? `昨收 ${formatMoney(stock, stock.previousClose)}` : "昨收 N/A"],
-    ["成交量", formatPlainNumber(stock.volume), hasNumber(stock.averageVolume) ? `均量 ${formatPlainNumber(stock.averageVolume)}` : "均量 N/A"],
+    ["正式名稱", stock.legalName || stock.name || MISSING_VALUE_TEXT, stock.symbol || "未標示"],
+    ["商品類型", stock.assetType || MISSING_VALUE_TEXT, stock.exchange || "未標示"],
+    ["交易所", stock.exchange || MISSING_VALUE_TEXT, stock.source || "未標示"],
+    ["幣別", stock.currency || MISSING_VALUE_TEXT, stock.quoteDate ? `報價 ${formatQuoteTimestamp(stock)}` : "即時或延遲報價"],
+    ["開盤", hasNumber(stock.open) ? formatMoney(stock, stock.open) : MISSING_VALUE_TEXT, hasNumber(stock.previousClose) ? `昨收 ${formatMoney(stock, stock.previousClose)}` : `昨收 ${MISSING_VALUE_TEXT}`],
+    ["成交量", formatPlainNumber(stock.volume), hasNumber(stock.averageVolume) ? `均量 ${formatPlainNumber(stock.averageVolume)}` : "均量資料不足"],
     ["市值", formatMarketCap(stock, stock.marketCap), stock.currency === "TWD" ? "台股以億元換算" : "美股以十億換算"],
-    ["52 週區間", hasNumber(stock.week52Low) && hasNumber(stock.week52High) ? `${formatMoney(stock, stock.week52Low)} - ${formatMoney(stock, stock.week52High)}` : "N/A", "長週期價格區間"],
-    ["財報季度", stock.fiscalQuarter || "N/A", stock.fundamentalsSource || "N/A"],
-    ["最新月營收", formatMonthlyRevenue(stock.monthlyRevenue), stock.monthlyRevenueSource || "目前無月營收資料"],
-    ["月增", formatPercent(stock.monthlyRevenueMoM, 2), stock.monthlyRevenuePeriod || "資料月份 N/A"],
-    ["年增", formatPercent(stock.monthlyRevenueYoY, 2), stock.monthlyRevenuePeriod ? `${stock.monthlyRevenuePeriod} 公開資料` : "資料月份 N/A"],
-    ["基本面來源", stock.fundamentalsSource || "N/A", stock.fundamentalsLive ? "可用" : "目前缺資料"]
+    ["52 週區間", hasNumber(stock.week52Low) && hasNumber(stock.week52High) ? `${formatMoney(stock, stock.week52Low)} - ${formatMoney(stock, stock.week52High)}` : MISSING_VALUE_TEXT, hasNumber(stock.week52Low) && hasNumber(stock.week52High) ? "長週期價格區間" : "52 週區間資料不足"],
+    ["財報季度", stock.fiscalQuarter || MISSING_VALUE_TEXT, stock.fundamentalsSource || MISSING_FUNDAMENTALS_TEXT],
+    ["最新月營收", formatMonthlyRevenue(stock.monthlyRevenue), stock.monthlyRevenueSource || MISSING_MONTHLY_REVENUE_TEXT],
+    ["月增", formatPercent(stock.monthlyRevenueMoM, 2), stock.monthlyRevenuePeriod || MISSING_PERIOD_TEXT],
+    ["年增", formatPercent(stock.monthlyRevenueYoY, 2), stock.monthlyRevenuePeriod ? `${stock.monthlyRevenuePeriod} 公開資料` : MISSING_PERIOD_TEXT],
+    ["基本面來源", stock.fundamentalsSource || MISSING_VALUE_TEXT, stock.fundamentalsLive ? "可用" : MISSING_FUNDAMENTALS_TEXT]
   ];
 
   elements.profileStatus.textContent = stock.assetType || "基本資料";
@@ -1100,7 +1134,7 @@ function renderStockLibrary(items, stateMap, countElement, container) {
           ? `${quote.changePct >= 0 ? "+" : ""}${quote.changePct.toFixed(2)}%`
           : quote.loading
             ? "更新中"
-            : "N/A";
+            : MISSING_VALUE_TEXT;
 
         return `
         <button type="button" data-symbol="${symbol}" aria-label="${symbol} ${name}">
@@ -1298,15 +1332,15 @@ async function renderStock(symbol) {
   elements.verdictBadge.textContent = labels.verdict;
   elements.verdictBadge.style.background = score === null ? "var(--cyan)" : score >= 78 ? "var(--green)" : score >= 62 ? "var(--yellow)" : "var(--red)";
   elements.priceText.textContent = formatMoney(stock, stock.price);
-  elements.changeText.textContent = hasNumber(stock.changePct) ? `${stock.changePct >= 0 ? "+" : ""}${stock.changePct.toFixed(2)}%` : "N/A";
+  elements.changeText.textContent = hasNumber(stock.changePct) ? `${stock.changePct >= 0 ? "+" : ""}${stock.changePct.toFixed(2)}%` : MISSING_VALUE_TEXT;
   elements.changeText.className = hasNumber(stock.changePct) && stock.changePct >= 0 ? "positive" : "negative";
   elements.rangeFill.style.width = `${rangePct}%`;
   elements.lowText.textContent = formatMoney(stock, stock.dayLow);
   elements.highText.textContent = formatMoney(stock, stock.dayHigh);
-  elements.valueScore.textContent = score === null ? "N/A" : score;
+  elements.valueScore.textContent = score === null ? MISSING_VALUE_TEXT : score;
   elements.valueHint.textContent = gradeLabel;
-  elements.revenueGrowth.textContent = hasNumber(stock.revenueGrowth) ? `${stock.revenueGrowth.toFixed(1)}%` : "N/A";
-  elements.revenueHint.textContent = hasNumber(stock.revenueGrowth) ? (stock.revenueGrowth > 20 ? "營收動能強" : "成長需追蹤") : "目前無即時營收資料";
+  elements.revenueGrowth.textContent = hasNumber(stock.revenueGrowth) ? `${stock.revenueGrowth.toFixed(1)}%` : MISSING_VALUE_TEXT;
+  elements.revenueHint.textContent = hasNumber(stock.revenueGrowth) ? (stock.revenueGrowth > 20 ? "營收動能強" : "成長需追蹤") : MISSING_REVENUE_HINT_TEXT;
   elements.smartMoney.textContent = netBuy > 12 ? "偏買超" : netBuy < -8 ? "偏賣超" : "中性";
   elements.smartMoneyHint.textContent = `買 ${stock.institutionalBuy || 50}% / 賣 ${stock.institutionalSell || 50}%（估算）`;
   elements.aiComment.textContent = buildComment(stock, score, labels, gradeLabel);
@@ -1319,10 +1353,10 @@ async function renderStock(symbol) {
   elements.sellMeter.value = stock.institutionalSell || 50;
   elements.volumeMeter.value = stock.volumePower || 50;
   elements.dataStatus.textContent = stock.live
-    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "目前沒有同步取得可信基本面，營收與估值欄位不做硬推估。"}${stock.monthlyRevenueSource ? ` 月營收來自 ${stock.monthlyRevenueSource}。` : ""}`
+    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "基本面資料不足，營收與估值欄位以資料不足顯示。"}${stock.monthlyRevenueSource ? ` 月營收來自 ${stock.monthlyRevenueSource}。` : ` ${MISSING_MONTHLY_REVENUE_TEXT}。`}`
     : stock.source === "公開展示模式"
       ? `目前是可分享的公開展示頁，價格與分析使用示範資料；${configuredApiBase ? `已設定公開 API ${configuredApiBase}，但目前未成功取回資料。` : "請先部署公開 API，並在 config.js 設定 apiBase。"}`
-      : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${stock.warnings[0]}` : ""}`;
+      : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${formatMissingReason(stock.warnings[0])}` : ""}`;
 
   renderFlow(stock.flow);
   renderMetrics(stock);
