@@ -345,6 +345,11 @@ function sanitizeNumericField(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function normalizeFinnhubMarketCap(value) {
+  const marketCapMillions = sanitizeNumericField(value);
+  return marketCapMillions === null ? null : marketCapMillions * 1000000;
+}
+
 function getBaseStock(symbol) {
   return sampleStocks[symbol] || {
     ...sampleStocks.NVDA,
@@ -645,6 +650,54 @@ async function fetchStooqCandles(symbol) {
   return candles;
 }
 
+async function fetchFinnhubCandles(symbol, targetLength) {
+  const apiKey = process.env.FINNHUB_API_KEY;
+  if (!apiKey) throw new Error("Finnhub API key not configured");
+
+  const now = Math.floor(Date.now() / 1000);
+  const from = now - (targetLength * 3 * 24 * 60 * 60);
+  const params = new URLSearchParams({
+    symbol,
+    resolution: "D",
+    from: String(from),
+    to: String(now),
+    token: apiKey
+  });
+  const json = await fetchJson(`https://finnhub.io/api/v1/stock/candle?${params.toString()}`);
+
+  if (json?.s !== "ok" || !Array.isArray(json?.c) || !json.c.length) {
+    throw new Error("Finnhub candles unavailable");
+  }
+
+  const candles = json.c
+    .map((close, index) => {
+      const open = sanitizeNumericField(json.o?.[index]);
+      const high = sanitizeNumericField(json.h?.[index]);
+      const low = sanitizeNumericField(json.l?.[index]);
+      const timestamp = sanitizeNumericField(json.t?.[index]);
+      const volume = sanitizeNumericField(json.v?.[index]);
+      const normalizedClose = sanitizeNumericField(close);
+
+      if (!open || !high || !low || !normalizedClose || !timestamp) return null;
+
+      return {
+        date: new Date(timestamp * 1000).toISOString().slice(0, 10),
+        volume,
+        open,
+        high,
+        low,
+        close: normalizedClose
+      };
+    })
+    .filter(Boolean);
+
+  if (!candles.length) {
+    throw new Error("Finnhub candles unavailable");
+  }
+
+  return candles.slice(-targetLength);
+}
+
 async function getCandleData(symbol, rangeLabel) {
   const base = getBaseStock(symbol);
   const rangeMonths = rangeLabel === "6M" ? 6 : rangeLabel === "1M" ? 1 : 3;
@@ -662,6 +715,17 @@ async function getCandleData(symbol, rangeLabel) {
       };
     } catch {}
   }
+
+  try {
+    const candles = await fetchFinnhubCandles(symbol, targetLength);
+    return {
+      symbol,
+      range: rangeLabel,
+      source: "Finnhub historical daily",
+      live: true,
+      candles
+    };
+  } catch {}
 
   try {
     const candles = await fetchStooqCandles(symbol);
@@ -760,7 +824,7 @@ async function fetchFinnhubStock(symbol, base) {
     pbRatio: sanitizeNumericField(metrics.pbQuarterly),
     dividendYield: sanitizeNumericField(metrics.dividendYieldIndicatedAnnual),
     fiscalQuarter: metrics.yearQuarter || null,
-    marketCap: sanitizeNumericField(profile.marketCapitalization),
+    marketCap: normalizeFinnhubMarketCap(profile.marketCapitalization),
     week52Low: sanitizeNumericField(metrics["52WeekLow"]),
     week52High: sanitizeNumericField(metrics["52WeekHigh"]),
     debtRatio: sanitizeNumericField(metrics.totalDebtToEquityQuarterly),
