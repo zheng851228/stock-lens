@@ -698,6 +698,50 @@ async function fetchFinnhubCandles(symbol, targetLength) {
   return candles.slice(-targetLength);
 }
 
+async function fetchYahooCandles(symbol, rangeLabel, targetLength) {
+  const rangeMap = {
+    "1M": "1mo",
+    "3M": "3mo",
+    "6M": "6mo"
+  };
+  const params = new URLSearchParams({
+    interval: "1d",
+    range: rangeMap[rangeLabel] || "3mo",
+    includeAdjustedClose: "true"
+  });
+  const json = await fetchJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`);
+  const result = json?.chart?.result?.[0];
+  const timestamps = Array.isArray(result?.timestamp) ? result.timestamp : [];
+  const quote = result?.indicators?.quote?.[0] || {};
+
+  const candles = timestamps
+    .map((timestamp, index) => {
+      const open = sanitizeNumericField(quote.open?.[index]);
+      const high = sanitizeNumericField(quote.high?.[index]);
+      const low = sanitizeNumericField(quote.low?.[index]);
+      const close = sanitizeNumericField(quote.close?.[index]);
+      const volume = sanitizeNumericField(quote.volume?.[index]);
+
+      if (!timestamp || !open || !high || !low || !close) return null;
+
+      return {
+        date: new Date(timestamp * 1000).toISOString().slice(0, 10),
+        volume,
+        open,
+        high,
+        low,
+        close
+      };
+    })
+    .filter(Boolean);
+
+  if (!candles.length) {
+    throw new Error("Yahoo candles unavailable");
+  }
+
+  return candles.slice(-targetLength);
+}
+
 async function getCandleData(symbol, rangeLabel) {
   const base = getBaseStock(symbol);
   const rangeMonths = rangeLabel === "6M" ? 6 : rangeLabel === "1M" ? 1 : 3;
@@ -722,6 +766,17 @@ async function getCandleData(symbol, rangeLabel) {
       symbol,
       range: rangeLabel,
       source: "Finnhub historical daily",
+      live: true,
+      candles
+    };
+  } catch {}
+
+  try {
+    const candles = await fetchYahooCandles(symbol, rangeLabel, targetLength);
+    return {
+      symbol,
+      range: rangeLabel,
+      source: "Yahoo historical daily",
       live: true,
       candles
     };
