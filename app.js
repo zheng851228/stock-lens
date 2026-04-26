@@ -213,18 +213,65 @@ const usTop10Constituents = [
   { symbol: "BRK-B", name: "Berkshire Hathaway" }
 ];
 
+const taiwanEtfSearchEntries = [
+  { symbol: "0056.TW", name: "元大高股息", aliases: ["0056", "元大高股息", "高股息"] },
+  { symbol: "006208.TW", name: "富邦台50", aliases: ["006208", "富邦台50", "富邦台灣50"] },
+  { symbol: "00713.TW", name: "元大台灣高息低波", aliases: ["00713", "高息低波"] },
+  { symbol: "00878.TW", name: "國泰永續高股息", aliases: ["00878", "國泰永續高股息"] },
+  { symbol: "00919.TW", name: "群益台灣精選高息", aliases: ["00919", "群益台灣精選高息"] },
+  { symbol: "00929.TW", name: "復華台灣科技優息", aliases: ["00929", "復華台灣科技優息"] },
+  { symbol: "00940.TW", name: "元大台灣價值高息", aliases: ["00940", "元大台灣價值高息"] },
+  { symbol: "00947.TW", name: "台新臺灣IC設計", aliases: ["00947", "台新臺灣IC設計", "台新台灣IC設計"] }
+];
+
+const expandedUsSearchEntries = [
+  { symbol: "AMD", name: "Advanced Micro Devices", aliases: ["AMD", "超微"] },
+  { symbol: "QQQ", name: "Invesco QQQ Trust", aliases: ["QQQ", "那斯達克100", "納斯達克100"] },
+  { symbol: "SPY", name: "SPDR S&P 500 ETF", aliases: ["SPY", "標普500", "S&P500"] },
+  { symbol: "VOO", name: "Vanguard S&P 500 ETF", aliases: ["VOO", "先鋒標普500"] },
+  { symbol: "TSM", name: "Taiwan Semiconductor ADR", aliases: ["TSM", "台積電ADR"] },
+  { symbol: "NFLX", name: "Netflix", aliases: ["NFLX", "網飛"] }
+];
+
+function normalizeLookupKey(value) {
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+}
+
+const searchDirectory = [
+  ...taiwan50Constituents.map(({ symbol, name }) => ({
+    symbol,
+    name,
+    aliases: [symbol.replace(".TW", ""), name]
+  })),
+  ...usTop10Constituents.map(({ symbol, name }) => ({
+    symbol,
+    name,
+    aliases: [name]
+  })),
+  ...taiwanEtfSearchEntries,
+  ...expandedUsSearchEntries
+];
+
+const symbolAliasMap = new Map();
+searchDirectory.forEach(({ symbol, name, aliases = [] }) => {
+  [symbol, symbol.replace(".TW", ""), name, ...aliases].forEach((alias) => {
+    const key = normalizeLookupKey(alias);
+    if (key) symbolAliasMap.set(key, symbol);
+  });
+});
+
 const symbolSuggestions = [
   ...new Set([
     ...quickSymbols,
     ...Object.keys(sampleStocks),
     ...taiwan50Constituents.map((item) => item.symbol),
-    ...usTop10Constituents.map((item) => item.symbol)
+    ...usTop10Constituents.map((item) => item.symbol),
+    ...searchDirectory.map((item) => item.symbol)
   ])
 ].map((symbol) => ({
   symbol,
   name:
-    taiwan50Constituents.find((item) => item.symbol === symbol)?.name ||
-    usTop10Constituents.find((item) => item.symbol === symbol)?.name ||
+    searchDirectory.find((item) => item.symbol === symbol)?.name ||
     sampleStocks[symbol]?.name ||
     ""
 }));
@@ -496,6 +543,10 @@ function numberWithFallback(value, fallback) {
 
 function normalizeUserSymbol(symbol) {
   const normalized = symbol.trim().toUpperCase();
+  const aliased = symbolAliasMap.get(normalizeLookupKey(symbol));
+  if (aliased) {
+    return aliased;
+  }
   if (/^\d{4,6}$/.test(normalized)) {
     return `${normalized}.TW`;
   }
