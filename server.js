@@ -3,6 +3,7 @@ const { readFile } = require("node:fs/promises");
 const path = require("node:path");
 const { URL } = require("node:url");
 
+const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT || 4173);
 const ROOT = __dirname;
 const STOCK_CACHE_TTL_MS = 60 * 1000;
@@ -265,7 +266,6 @@ const sectorFlows = {
 function sendJson(response, status, payload) {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": "*",
     "cache-control": "no-store"
   });
   response.end(JSON.stringify(payload));
@@ -274,6 +274,26 @@ function sendJson(response, status, payload) {
 function sendText(response, status, text) {
   response.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   response.end(text);
+}
+
+function resolveAllowedOrigin(request) {
+  const origin = request.headers.origin;
+  const configuredOrigins = String(process.env.ALLOWED_ORIGIN || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (!origin) return configuredOrigins[0] || "*";
+  if (!configuredOrigins.length) return "*";
+  return configuredOrigins.includes(origin) ? origin : configuredOrigins[0];
+}
+
+function applyApiCorsHeaders(request, response) {
+  response.setHeader("access-control-allow-origin", resolveAllowedOrigin(request));
+  response.setHeader("access-control-allow-methods", "GET, OPTIONS");
+  response.setHeader("access-control-allow-headers", "content-type");
+  response.setHeader("access-control-max-age", "86400");
+  response.setHeader("vary", "Origin");
 }
 
 function sanitizeSymbol(symbol) {
@@ -1294,6 +1314,12 @@ async function serveStatic(request, response, pathname) {
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
   if (url.pathname.startsWith("/api/")) {
+    applyApiCorsHeaders(request, response);
+    if (request.method === "OPTIONS") {
+      response.writeHead(204);
+      response.end();
+      return;
+    }
     await handleApi(request, response, url.pathname);
     return;
   }
@@ -1301,6 +1327,6 @@ const server = http.createServer(async (request, response) => {
   await serveStatic(request, response, url.pathname);
 });
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`Stock Lens running at http://127.0.0.1:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`Stock Lens running at http://${HOST}:${PORT}`);
 });
