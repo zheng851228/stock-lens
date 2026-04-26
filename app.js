@@ -320,7 +320,12 @@ const elements = {
 
 const isLocalRuntime = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 const isFilePreview = window.location.protocol === "file:";
-const API_BASE = isFilePreview ? "http://127.0.0.1:4173" : isLocalRuntime ? "" : null;
+const configuredApiBase = (() => {
+  const value = window.STOCK_LENS_CONFIG?.apiBase;
+  if (typeof value !== "string") return "";
+  return value.trim().replace(/\/+$/, "");
+})();
+const API_BASE = isFilePreview ? "http://127.0.0.1:4173" : isLocalRuntime ? "" : configuredApiBase || null;
 const THEME_STORAGE_KEY = "stock-lens-theme";
 
 function getCssVar(name) {
@@ -1256,7 +1261,7 @@ async function renderStock(symbol) {
   elements.dataStatus.textContent = stock.live
     ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "目前沒有同步取得可信基本面，營收與估值欄位不做硬推估。"}${stock.monthlyRevenueSource ? ` 月營收來自 ${stock.monthlyRevenueSource}。` : ""}`
     : stock.source === "公開展示模式"
-      ? "目前是可分享的公開展示頁，價格與分析使用示範資料；本機版會串接即時財經 API。"
+      ? `目前是可分享的公開展示頁，價格與分析使用示範資料；${configuredApiBase ? `已設定公開 API ${configuredApiBase}，但目前未成功取回資料。` : "請先部署公開 API，並在 config.js 設定 apiBase。"}`
       : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${stock.warnings[0]}` : ""}`;
 
   renderFlow(stock.flow);

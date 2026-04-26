@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: stock-lens-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: ALLOWED_ORIGIN
+        value: "https://zheng851228.github.io"
