@@ -1,3 +1,3 @@
 window.STOCK_LENS_CONFIG = {
-  apiBase: ""
+  apiBase: "https://stock-lens-api.onrender.com"
 };
