@@ -9,35 +9,62 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
+  <body data-theme="dark">
     <main class="shell">
       <section class="workspace" aria-label="AI 股票分析工作台">
         <aside class="sidebar">
-          <div class="brand">
-            <div class="brand-mark">AI</div>
-            <div>
-              <p>Stock Lens</p>
-              <span>價格 · 營收 · 資金流</span>
+          <div class="sidebar-panel">
+            <div class="app-header">
+              <div>
+                <p class="app-label">Stock Lens</p>
+                <h1 class="app-date" id="currentDateText">4月26日</h1>
+              </div>
+              <div class="app-actions">
+                <button type="button" class="theme-toggle" id="themeToggle" aria-label="切換主題">深色</button>
+              </div>
             </div>
+
+            <form class="search" id="stockForm">
+              <label for="symbolInput">輸入股票代號</label>
+              <div class="search-row">
+                <input id="symbolInput" type="text" value="NVDA" autocomplete="off" list="symbolSuggestions" placeholder="例如 NVDA、AAPL、2330.TW" />
+                <button type="submit" aria-label="查詢">
+                  <span>⌕</span>
+                </button>
+              </div>
+              <datalist id="symbolSuggestions"></datalist>
+            </form>
+
+            <section class="watch-section" aria-label="快速觀察清單">
+              <div class="section-title compact">
+                <span>快速觀察</span>
+                <small>自選</small>
+              </div>
+              <div class="watchlist">
+                <button type="button" data-symbol="NVDA" class="active">NVDA</button>
+                <button type="button" data-symbol="AAPL">AAPL</button>
+                <button type="button" data-symbol="TSM">TSM</button>
+                <button type="button" data-symbol="2330.TW">2330.TW</button>
+                <button type="button" data-symbol="0050.TW">0050.TW</button>
+              </div>
+            </section>
           </div>
 
-          <form class="search" id="stockForm">
-            <label for="symbolInput">股票代碼</label>
-            <div class="search-row">
-              <input id="symbolInput" type="text" value="NVDA" autocomplete="off" placeholder="例如 NVDA、AAPL、2330.TW" />
-              <button type="submit" aria-label="查詢">
-                <span>⌕</span>
-              </button>
+          <section class="library-card" aria-labelledby="taiwan50Title">
+            <div class="section-title compact">
+              <span id="taiwan50Title">台灣 50 成分股</span>
+              <small id="taiwan50Count">50 檔</small>
             </div>
-          </form>
+            <div class="stock-library" id="taiwan50List"></div>
+          </section>
 
-          <div class="watchlist" aria-label="快速觀察清單">
-            <button type="button" data-symbol="NVDA" class="active">NVDA</button>
-            <button type="button" data-symbol="AAPL">AAPL</button>
-            <button type="button" data-symbol="TSM">TSM</button>
-            <button type="button" data-symbol="2330.TW">2330.TW</button>
-            <button type="button" data-symbol="0050.TW">0050.TW</button>
-          </div>
+          <section class="library-card" aria-labelledby="usTop10Title">
+            <div class="section-title compact">
+              <span id="usTop10Title">美股前十大</span>
+              <small id="usTop10Count">10 檔</small>
+            </div>
+            <div class="stock-library" id="usTop10List"></div>
+          </section>
 
           <div class="data-note">
             <strong>資料狀態</strong>
@@ -47,34 +74,82 @@
 
         <section class="content">
           <header class="topbar">
-            <div>
-              <p class="eyebrow">AI 股票儀表板</p>
-              <h1 id="companyName">NVIDIA Corporation</h1>
+            <div class="topbar-copy">
+              <div class="topbar-heading">
+                <div>
+                  <p class="eyebrow">即時行情工作台</p>
+                  <h1 id="companyName">NVIDIA Corporation</h1>
+                </div>
+                <div class="verdict" id="verdictBadge">觀察</div>
+              </div>
               <div class="meta">
                 <span id="tickerText">NVDA</span>
                 <span id="sectorText">半導體</span>
                 <span id="updatedText">更新中</span>
               </div>
             </div>
-            <div class="verdict" id="verdictBadge">觀察</div>
           </header>
 
-          <section class="quote-grid">
-            <article class="quote-panel primary-panel">
-              <div class="panel-label">即時參考價</div>
-              <div class="price-row">
-                <strong id="priceText">$0.00</strong>
-                <span id="changeText">0.00%</span>
+          <section class="hero-grid">
+            <section class="chart-card">
+              <div class="section-title">
+                <span>K 線走勢</span>
+                <div class="chart-toolbar" id="chartToolbar">
+                  <button type="button" class="active" data-range="1M">1M</button>
+                  <button type="button" data-range="3M">3M</button>
+                  <button type="button" data-range="6M">6M</button>
+                </div>
               </div>
-              <div class="range-track" aria-hidden="true">
-                <span id="rangeFill"></span>
+              <div class="chart-summary">
+                <small id="chartStatus">整理歷史日線中</small>
+                <strong id="chartLegend">OHLC --</strong>
               </div>
-              <div class="range-labels">
-                <span id="lowText">低點</span>
-                <span id="highText">高點</span>
+              <div class="chart-surface" id="chartSurface">
+                <div class="chart-empty">載入 K 線資料中</div>
               </div>
-            </article>
+            </section>
 
+            <aside class="hero-aside">
+              <article class="quote-panel primary-panel">
+                <div class="panel-label">即時參考價</div>
+                <div class="price-row">
+                  <strong id="priceText">$0.00</strong>
+                  <span id="changeText">0.00%</span>
+                </div>
+                <div class="range-track" aria-hidden="true">
+                  <span id="rangeFill"></span>
+                </div>
+                <div class="range-labels">
+                  <span id="lowText">低點</span>
+                  <span id="highText">高點</span>
+                </div>
+              </article>
+
+              <article class="analysis-card ai-card">
+                <div class="section-title">
+                  <span>AI 評論</span>
+                  <small id="riskLabel">風險評估</small>
+                </div>
+                <p id="aiComment">正在整理價格、營收與資金流訊號。</p>
+                <div class="action-grid">
+                  <div>
+                    <span>長期持有</span>
+                    <strong id="longTerm">待觀察</strong>
+                  </div>
+                  <div>
+                    <span>短期波段</span>
+                    <strong id="shortTerm">待觀察</strong>
+                  </div>
+                  <div>
+                    <span>便宜程度</span>
+                    <strong id="cheapness">待觀察</strong>
+                  </div>
+                </div>
+              </article>
+            </aside>
+          </section>
+
+          <section class="quote-grid">
             <article class="quote-panel">
               <div class="panel-label">估值分數</div>
               <strong id="valueScore">0</strong>
@@ -95,28 +170,6 @@
           </section>
 
           <section class="analysis-layout">
-            <article class="analysis-card ai-card">
-              <div class="section-title">
-                <span>AI 評論</span>
-                <small id="riskLabel">風險評估</small>
-              </div>
-              <p id="aiComment">正在整理價格、營收與資金流訊號。</p>
-              <div class="action-grid">
-                <div>
-                  <span>長期持有</span>
-                  <strong id="longTerm">待觀察</strong>
-                </div>
-                <div>
-                  <span>短期波段</span>
-                  <strong id="shortTerm">待觀察</strong>
-                </div>
-                <div>
-                  <span>便宜程度</span>
-                  <strong id="cheapness">待觀察</strong>
-                </div>
-              </div>
-            </article>
-
             <article class="analysis-card">
               <div class="section-title">
                 <span>資金流向</span>
@@ -129,10 +182,10 @@
           <section class="bottom-grid">
             <article class="analysis-card">
               <div class="section-title">
-                <span>基本資料</span>
-                <small id="profileStatus">整理中</small>
+                <span>關鍵指標</span>
+                <small>估值與品質</small>
               </div>
-              <div class="profile-grid" id="profileGrid"></div>
+              <div class="metric-table" id="metricTable"></div>
             </article>
 
             <article class="analysis-card">
@@ -158,16 +211,25 @@
 
             <article class="analysis-card">
               <div class="section-title">
-                <span>關鍵指標</span>
-                <small>估值與品質</small>
+                <span>基本資料</span>
+                <small id="profileStatus">整理中</small>
               </div>
-              <div class="metric-table" id="metricTable"></div>
+              <div class="profile-grid" id="profileGrid"></div>
             </article>
+          </section>
+
+          <section class="news-card">
+            <div>
+              <span class="news-label">財經新聞</span>
+              <strong>來自 Yahoo 股市</strong>
+            </div>
+            <small>yahoo! finance</small>
           </section>
         </section>
       </section>
     </main>
 
+    <script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
