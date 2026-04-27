@@ -574,12 +574,15 @@ const THEME_STORAGE_KEY = "stock-lens-theme";
 const WATCHLIST_STORAGE_KEY = "stock-lens-watchlist";
 const INDEX_HERO_COUNT_KEY = "stock-lens-index-hero-count";
 const INDEX_HERO_SYMBOLS_KEY = "stock-lens-index-hero-symbols";
+const LIVE_REFRESH_INTERVAL_MS = 60 * 1000;
+const STOCK_SNAPSHOT_STORAGE_PREFIX = "stock-lens-stock-snapshot:";
 const MAX_WATCHLIST_ITEMS = 10;
 const ALL_HERO_INDEX_SYMBOLS = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
 
 let customWatchSymbols = [];
 let heroIndexCount = 3;
 let heroIndexSymbols = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
+let liveRefreshTimer = null;
 
 function getCssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -650,6 +653,26 @@ function saveWatchlist() {
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(customWatchSymbols));
 }
 
+function loadStockSnapshot(symbol, baseStock) {
+  try {
+    const raw = localStorage.getItem(`${STOCK_SNAPSHOT_STORAGE_PREFIX}${symbol}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return normalizeStockForUi(parsed, baseStock, symbol);
+  } catch {
+    return null;
+  }
+}
+
+function saveStockSnapshot(symbol, stock) {
+  try {
+    localStorage.setItem(`${STOCK_SNAPSHOT_STORAGE_PREFIX}${symbol}`, JSON.stringify(stock));
+  } catch {
+    // ignore storage failures
+  }
+}
+
 function loadWatchlist() {
   try {
     const stored = JSON.parse(localStorage.getItem(WATCHLIST_STORAGE_KEY) || "null");
@@ -699,6 +722,82 @@ function renderIndexHero() {
       `;
     })
     .join("");
+}
+
+function applyStockToUi(stock, normalized) {
+  const score = getValueScore(stock);
+  const gradeLabel = getGradeLabel(score, stock);
+  const labels = getLabels(stock, score);
+  const dayRange = stock.dayHigh - stock.dayLow;
+  const rangePct = dayRange > 0 ? clamp(((stock.price - stock.dayLow) / dayRange) * 100, 4, 100) : 50;
+  const netBuy = (stock.institutionalBuy || 50) - (stock.institutionalSell || 50);
+
+  elements.companyName.textContent = stock.name;
+  elements.tickerText.textContent = normalized;
+  elements.sectorText.textContent = stock.sector;
+  elements.updatedText.textContent = formatQuoteTimestamp(stock);
+  elements.verdictBadge.textContent = labels.verdict;
+  elements.verdictBadge.style.background = score === null ? "var(--cyan)" : score >= 78 ? "var(--green)" : score >= 62 ? "var(--yellow)" : "var(--red)";
+  elements.priceText.textContent = formatMoney(stock, stock.price);
+  elements.changeText.textContent = hasNumber(stock.changePct) ? `${stock.changePct >= 0 ? "+" : ""}${stock.changePct.toFixed(2)}%` : MISSING_VALUE_TEXT;
+  elements.changeText.className = hasNumber(stock.changePct) && stock.changePct >= 0 ? "positive" : "negative";
+  elements.rangeFill.style.width = `${rangePct}%`;
+  elements.lowText.textContent = formatMoney(stock, stock.dayLow);
+  elements.highText.textContent = formatMoney(stock, stock.dayHigh);
+  elements.valueScore.textContent = score === null ? MISSING_VALUE_TEXT : score;
+  elements.valueHint.textContent = gradeLabel;
+  elements.revenueGrowth.textContent = hasNumber(stock.revenueGrowth) ? `${stock.revenueGrowth.toFixed(1)}%` : MISSING_VALUE_TEXT;
+  elements.revenueHint.textContent = hasNumber(stock.revenueGrowth) ? (stock.revenueGrowth > 20 ? "營收動能強" : "成長需追蹤") : MISSING_REVENUE_HINT_TEXT;
+  elements.smartMoney.textContent = netBuy > 12 ? "偏買超" : netBuy < -8 ? "偏賣超" : "中性";
+  elements.smartMoneyHint.textContent = `買 ${stock.institutionalBuy || 50}% / 賣 ${stock.institutionalSell || 50}%（估算）`;
+  elements.aiComment.textContent = buildComment(stock, score, labels, gradeLabel);
+  elements.longTerm.textContent = labels.longTerm;
+  elements.shortTerm.textContent = labels.shortTerm;
+  elements.cheapness.textContent = labels.cheapness;
+  elements.riskLabel.textContent = labels.risk;
+  elements.institutionStatus.textContent = netBuy > 12 ? "大戶偏多" : netBuy < -8 ? "大戶調節" : "多空拉鋸";
+  elements.buyMeter.value = stock.institutionalBuy || 50;
+  elements.sellMeter.value = stock.institutionalSell || 50;
+  elements.volumeMeter.value = stock.volumePower || 50;
+  elements.dataStatus.textContent = stock.live
+    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "基本面資料不足，營收與估值欄位以資料不足顯示。"}${stock.monthlyRevenueSource ? ` 月營收來自 ${stock.monthlyRevenueSource}。` : ` ${MISSING_MONTHLY_REVENUE_TEXT}。`} 即時刷新中。`
+    : stock.source === "公開展示模式"
+      ? `目前是可分享的公開展示頁，價格與分析使用示範資料；${configuredApiBase ? `已設定公開 API ${configuredApiBase}，但目前未成功取回資料。` : "請先部署公開 API，並在 config.js 設定 apiBase。"}`
+      : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${formatMissingReason(stock.warnings[0])}` : ""}`;
+
+  renderFlow(stock.flow);
+  renderMetrics(stock);
+  renderProfile(stock);
+}
+
+function scheduleMiniCandlePrefetch(items, stateMap, count = items.length) {
+  queueMicrotask(() => {
+    prefetchMiniCandles(items, stateMap, count).then(() => {
+      if (items === taiwan50Constituents) {
+        renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Count, elements.taiwan50List);
+      } else if (items === usTop10Constituents) {
+        renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
+      } else {
+        renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
+        renderIndexHero();
+      }
+    });
+  });
+}
+
+async function refreshAllQuotes() {
+  await Promise.allSettled([hydrateTaiwan50Quotes(), hydrateUsTop10Quotes(), hydrateMarketIndexQuotes()]);
+}
+
+function startLiveRefresh() {
+  if (liveRefreshTimer) clearInterval(liveRefreshTimer);
+  liveRefreshTimer = setInterval(() => {
+    if (document.visibilityState === "hidden") return;
+    refreshAllQuotes();
+    if (activeSymbol) {
+      renderStock(activeSymbol, { silent: true });
+    }
+  }, LIVE_REFRESH_INTERVAL_MS);
 }
 
 function renderIndexHeroSelector() {
@@ -1517,6 +1616,7 @@ function renderStockLibrary(items, stateMap, countElement, container) {
       ({ symbol, name }) => {
         const quote = stateMap.get(symbol) || {};
         const displaySymbol = getDisplaySymbol(symbol);
+        const loadingClass = quote.loading ? "loading" : "";
         const changeClass = hasNumber(quote.changePct) ? (quote.changePct >= 0 ? "positive" : "negative") : "muted";
         const changeText = hasNumber(quote.changePct)
           ? `${quote.changePct >= 0 ? "+" : ""}${quote.changePct.toFixed(2)}%`
@@ -1525,7 +1625,7 @@ function renderStockLibrary(items, stateMap, countElement, container) {
             : MISSING_VALUE_TEXT;
 
         return `
-        <button type="button" data-symbol="${symbol}" aria-label="${symbol} ${name}">
+        <button type="button" class="${loadingClass}" data-symbol="${symbol}" aria-label="${symbol} ${name}">
           <div class="stock-main">
             <div class="stock-copy">
               <strong>${displaySymbol}</strong>
@@ -1604,9 +1704,9 @@ async function hydrateTaiwan50Quotes() {
     });
   }
 
-  await prefetchMiniCandles(taiwan50Constituents, taiwan50QuoteState, 10);
   renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Count, elements.taiwan50List);
   updateActiveSymbolButtons(activeSymbol);
+  scheduleMiniCandlePrefetch(taiwan50Constituents, taiwan50QuoteState, 10);
 }
 
 async function hydrateUsTop10Quotes() {
@@ -1658,9 +1758,9 @@ async function hydrateUsTop10Quotes() {
     });
   }
 
-  await prefetchMiniCandles(usTop10Constituents, usTop10QuoteState);
   renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
   updateActiveSymbolButtons(activeSymbol);
+  scheduleMiniCandlePrefetch(usTop10Constituents, usTop10QuoteState);
 }
 
 async function hydrateMarketIndexQuotes() {
@@ -1713,10 +1813,10 @@ async function hydrateMarketIndexQuotes() {
     });
   }
 
-  await prefetchMiniCandles(marketIndexEntries, marketIndexQuoteState, marketIndexEntries.length);
   renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
   renderIndexHero();
   updateActiveSymbolButtons(activeSymbol);
+  scheduleMiniCandlePrefetch(marketIndexEntries, marketIndexQuoteState, marketIndexEntries.length);
 }
 
 async function prefetchMiniCandles(items, stateMap, count = items.length) {
@@ -1736,7 +1836,8 @@ async function prefetchMiniCandles(items, stateMap, count = items.length) {
   );
 }
 
-async function renderStock(symbol) {
+async function renderStock(symbol, options = {}) {
+  const { silent = false } = options;
   const normalized = normalizeUserSymbol(symbol);
   const requestId = (renderRequestId += 1);
   activeSymbol = normalized;
@@ -1754,60 +1855,27 @@ async function renderStock(symbol) {
     ]
   };
 
-  elements.dataStatus.textContent = "正在呼叫本機財經 API，整理即時報價與基本面資料。";
-  elements.chartStatus.textContent = "整理歷史日線中";
-  elements.chartLegend.textContent = "OHLC --";
-  elements.chartSurface.innerHTML = '<div class="chart-empty">載入 K 線資料中</div>';
+  if (!silent) {
+    elements.dataStatus.textContent = "正在呼叫本機財經 API，優先整理即時報價，K 線稍後補齊。";
+    elements.chartStatus.textContent = "整理歷史日線中";
+    elements.chartLegend.textContent = "OHLC --";
+    elements.chartSurface.innerHTML = '<div class="chart-empty loading">載入 K 線資料中</div>';
+    const cachedStock = loadStockSnapshot(normalized, baseStock);
+    if (cachedStock) {
+      applyStockToUi(cachedStock, normalized);
+      elements.dataStatus.textContent = "先顯示最近快取，正在背景刷新即時資料。";
+    }
+  }
   updateActiveSymbolButtons(normalized);
-  const [rawStock, candlePayload] = await Promise.all([
-    fetchStockFromApi(normalized, baseStock),
-    fetchCandlesFromApi(normalized, baseStock, activeChartRange)
-  ]);
+  const stockPromise = fetchStockFromApi(normalized, baseStock);
+  const candlePromise = fetchCandlesFromApi(normalized, baseStock, activeChartRange);
+  const rawStock = await stockPromise;
   if (requestId !== renderRequestId) return;
   const stock = normalizeStockForUi(rawStock, baseStock, normalized);
-  const score = getValueScore(stock);
-  const gradeLabel = getGradeLabel(score, stock);
-  const labels = getLabels(stock, score);
-  const dayRange = stock.dayHigh - stock.dayLow;
-  const rangePct = dayRange > 0 ? clamp(((stock.price - stock.dayLow) / dayRange) * 100, 4, 100) : 50;
-  const netBuy = (stock.institutionalBuy || 50) - (stock.institutionalSell || 50);
-
-  elements.companyName.textContent = stock.name;
-  elements.tickerText.textContent = normalized;
-  elements.sectorText.textContent = stock.sector;
-  elements.updatedText.textContent = formatQuoteTimestamp(stock);
-  elements.verdictBadge.textContent = labels.verdict;
-  elements.verdictBadge.style.background = score === null ? "var(--cyan)" : score >= 78 ? "var(--green)" : score >= 62 ? "var(--yellow)" : "var(--red)";
-  elements.priceText.textContent = formatMoney(stock, stock.price);
-  elements.changeText.textContent = hasNumber(stock.changePct) ? `${stock.changePct >= 0 ? "+" : ""}${stock.changePct.toFixed(2)}%` : MISSING_VALUE_TEXT;
-  elements.changeText.className = hasNumber(stock.changePct) && stock.changePct >= 0 ? "positive" : "negative";
-  elements.rangeFill.style.width = `${rangePct}%`;
-  elements.lowText.textContent = formatMoney(stock, stock.dayLow);
-  elements.highText.textContent = formatMoney(stock, stock.dayHigh);
-  elements.valueScore.textContent = score === null ? MISSING_VALUE_TEXT : score;
-  elements.valueHint.textContent = gradeLabel;
-  elements.revenueGrowth.textContent = hasNumber(stock.revenueGrowth) ? `${stock.revenueGrowth.toFixed(1)}%` : MISSING_VALUE_TEXT;
-  elements.revenueHint.textContent = hasNumber(stock.revenueGrowth) ? (stock.revenueGrowth > 20 ? "營收動能強" : "成長需追蹤") : MISSING_REVENUE_HINT_TEXT;
-  elements.smartMoney.textContent = netBuy > 12 ? "偏買超" : netBuy < -8 ? "偏賣超" : "中性";
-  elements.smartMoneyHint.textContent = `買 ${stock.institutionalBuy || 50}% / 賣 ${stock.institutionalSell || 50}%（估算）`;
-  elements.aiComment.textContent = buildComment(stock, score, labels, gradeLabel);
-  elements.longTerm.textContent = labels.longTerm;
-  elements.shortTerm.textContent = labels.shortTerm;
-  elements.cheapness.textContent = labels.cheapness;
-  elements.riskLabel.textContent = labels.risk;
-  elements.institutionStatus.textContent = netBuy > 12 ? "大戶偏多" : netBuy < -8 ? "大戶調節" : "多空拉鋸";
-  elements.buyMeter.value = stock.institutionalBuy || 50;
-  elements.sellMeter.value = stock.institutionalSell || 50;
-  elements.volumeMeter.value = stock.volumePower || 50;
-  elements.dataStatus.textContent = stock.live
-    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "基本面資料不足，營收與估值欄位以資料不足顯示。"}${stock.monthlyRevenueSource ? ` 月營收來自 ${stock.monthlyRevenueSource}。` : ` ${MISSING_MONTHLY_REVENUE_TEXT}。`}`
-    : stock.source === "公開展示模式"
-      ? `目前是可分享的公開展示頁，價格與分析使用示範資料；${configuredApiBase ? `已設定公開 API ${configuredApiBase}，但目前未成功取回資料。` : "請先部署公開 API，並在 config.js 設定 apiBase。"}`
-      : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${formatMissingReason(stock.warnings[0])}` : ""}`;
-
-  renderFlow(stock.flow);
-  renderMetrics(stock);
-  renderProfile(stock);
+  applyStockToUi(stock, normalized);
+  saveStockSnapshot(normalized, stock);
+  const candlePayload = await candlePromise;
+  if (requestId !== renderRequestId) return;
   renderCandles(stock, candlePayload);
   renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Count, elements.taiwan50List);
   renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
@@ -1896,3 +1964,4 @@ hydrateTaiwan50Quotes();
 hydrateUsTop10Quotes();
 hydrateMarketIndexQuotes();
 renderStock(elements.input.value);
+startLiveRefresh();
