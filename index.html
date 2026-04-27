@@ -16,44 +16,34 @@
           <div class="sidebar-panel">
             <div class="app-header">
               <div>
-                <p class="app-label">Stock Lens</p>
+                <p class="app-label">台美加權指數</p>
                 <h1 class="app-date" id="currentDateText">4月26日</h1>
+                <p class="app-subtitle">台股、美股指數與核心權值觀察</p>
               </div>
               <div class="app-actions">
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="切換主題">深色</button>
               </div>
             </div>
 
-            <form class="search" id="stockForm">
-              <label for="symbolInput">輸入股票代號</label>
-              <div class="search-row">
-                <input id="symbolInput" type="text" value="NVDA" autocomplete="off" list="symbolSuggestions" placeholder="例如 NVDA、台積電、006208、00947" />
-                <button type="submit" aria-label="查詢">
-                  <span>⌕</span>
-                </button>
-              </div>
+            <div class="index-hero-toolbar" id="indexHeroToolbar" aria-label="指數卡片數量">
+              <button type="button" class="active" data-hero-count="3">3</button>
+              <button type="button" data-hero-count="4">4</button>
+              <button type="button" data-hero-count="6">6</button>
+            </div>
+
+            <div class="index-hero" id="indexHero"></div>
+
+            <form id="stockForm" class="hidden-state-form" aria-hidden="true">
+              <input id="symbolInput" type="hidden" value="NVDA" autocomplete="off" list="symbolSuggestions" />
               <datalist id="symbolSuggestions"></datalist>
             </form>
 
-            <section class="watch-section" aria-label="快速觀察清單">
-              <div class="section-title compact">
-                <span>快速觀察</span>
-                <small>自選</small>
-              </div>
-              <div class="watchlist">
-                <button type="button" data-symbol="NVDA" class="active">NVDA</button>
-                <button type="button" data-symbol="AAPL">AAPL</button>
-                <button type="button" data-symbol="TSM">TSM</button>
-                <button type="button" data-symbol="2330.TW">2330.TW</button>
-                <button type="button" data-symbol="0050.TW">0050.TW</button>
-              </div>
-            </section>
           </div>
 
           <section class="library-card" aria-labelledby="taiwan50Title">
             <div class="section-title compact">
-              <span id="taiwan50Title">台灣 50 成分股</span>
-              <small id="taiwan50Count">50 檔</small>
+              <span id="taiwan50Title">台股前十大</span>
+              <small id="taiwan50Count">10 檔</small>
             </div>
             <div class="stock-library" id="taiwan50List"></div>
           </section>
@@ -64,6 +54,14 @@
               <small id="usTop10Count">10 檔</small>
             </div>
             <div class="stock-library" id="usTop10List"></div>
+          </section>
+
+          <section class="library-card" aria-labelledby="marketIndexTitle">
+            <div class="section-title compact">
+              <span id="marketIndexTitle">台美指數</span>
+              <small id="marketIndexCount">6 檔</small>
+            </div>
+            <div class="stock-library" id="marketIndexList"></div>
           </section>
 
           <div class="data-note">
@@ -89,6 +87,23 @@
               </div>
             </div>
           </header>
+
+          <section class="watch-section watch-card" aria-label="快速觀察清單">
+            <div class="section-title compact">
+              <span>快速觀察</span>
+              <small>自訂</small>
+            </div>
+            <form class="watch-search" id="watchQuickForm">
+              <input id="watchQuickInput" type="text" autocomplete="off" list="symbolSuggestions" placeholder="搜尋股票、ETF、指數後加入" />
+              <button type="submit" class="watch-tool-button">搜尋加入</button>
+            </form>
+            <div class="watch-tools">
+              <button type="button" class="watch-tool-button" id="watchAddButton">加入目前</button>
+              <button type="button" class="watch-tool-button subtle" id="watchResetButton">重設</button>
+            </div>
+            <div class="watchlist" id="watchlist"></div>
+            <p class="watch-note">查詢後可加入常看，會保留在這台裝置。</p>
+          </section>
 
           <section class="hero-grid">
             <section class="chart-card">

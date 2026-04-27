@@ -119,6 +119,198 @@ const sampleStocks = {
       ["高股息", 43]
     ]
   },
+  "006208.TW": {
+    name: "富邦台50",
+    sector: "台股 ETF",
+    currency: "TWD",
+    price: 112.4,
+    changePct: 0.27,
+    dayLow: 111.8,
+    dayHigh: 112.9,
+    revenueGrowth: 13.2,
+    grossMargin: 0,
+    pe: 22.1,
+    forwardPe: 18.4,
+    debtRatio: 0,
+    institutionalBuy: 54,
+    institutionalSell: 46,
+    volumePower: 55,
+    flow: [
+      ["台股 ETF", 67],
+      ["電子權值", 73],
+      ["金融", 52],
+      ["半導體", 78],
+      ["高股息", 38]
+    ]
+  },
+  "00878.TW": {
+    name: "國泰永續高股息",
+    sector: "台股 ETF",
+    currency: "TWD",
+    price: 21.63,
+    changePct: 0.19,
+    dayLow: 21.5,
+    dayHigh: 21.71,
+    revenueGrowth: 8.6,
+    grossMargin: 0,
+    pe: 16.2,
+    forwardPe: 14.7,
+    debtRatio: 0,
+    institutionalBuy: 52,
+    institutionalSell: 48,
+    volumePower: 53,
+    flow: [
+      ["高股息", 75],
+      ["台股 ETF", 64],
+      ["金融", 56],
+      ["電子權值", 43],
+      ["防禦型", 41]
+    ]
+  },
+  "^TWII": {
+    name: "台灣加權指數",
+    sector: "市場指數",
+    currency: "TWD",
+    price: 20364.12,
+    changePct: 0.61,
+    dayLow: 20218.44,
+    dayHigh: 20410.57,
+    revenueGrowth: null,
+    grossMargin: null,
+    pe: 20.6,
+    forwardPe: null,
+    debtRatio: null,
+    institutionalBuy: 58,
+    institutionalSell: 42,
+    volumePower: 61,
+    flow: [
+      ["電子權值", 82],
+      ["半導體", 76],
+      ["金融", 58],
+      ["傳產", 46],
+      ["高股息", 39]
+    ]
+  },
+  "^GSPC": {
+    name: "S&P 500 Index",
+    sector: "市場指數",
+    currency: "USD",
+    price: 5510.3,
+    changePct: 0.74,
+    dayLow: 5470.12,
+    dayHigh: 5524.88,
+    revenueGrowth: null,
+    grossMargin: null,
+    pe: 24.8,
+    forwardPe: null,
+    debtRatio: null,
+    institutionalBuy: 56,
+    institutionalSell: 44,
+    volumePower: 59,
+    flow: [
+      ["大型科技", 79],
+      ["AI 伺服器", 68],
+      ["金融", 54],
+      ["消費零售", 48],
+      ["醫療", 44]
+    ]
+  },
+  "^IXIC": {
+    name: "Nasdaq Composite",
+    sector: "市場指數",
+    currency: "USD",
+    price: 17342.55,
+    changePct: 0.96,
+    dayLow: 17180.34,
+    dayHigh: 17390.22,
+    revenueGrowth: null,
+    grossMargin: null,
+    pe: 31.4,
+    forwardPe: null,
+    debtRatio: null,
+    institutionalBuy: 61,
+    institutionalSell: 39,
+    volumePower: 66,
+    flow: [
+      ["大型科技", 84],
+      ["半導體", 74],
+      ["AI 伺服器", 71],
+      ["雲端軟體", 63],
+      ["醫療", 37]
+    ]
+  },
+  "^DJI": {
+    name: "Dow Jones Industrial Average",
+    sector: "市場指數",
+    currency: "USD",
+    price: 40182.41,
+    changePct: 0.41,
+    dayLow: 39976.14,
+    dayHigh: 40228.77,
+    revenueGrowth: null,
+    grossMargin: null,
+    pe: 22.3,
+    forwardPe: null,
+    debtRatio: null,
+    institutionalBuy: 53,
+    institutionalSell: 47,
+    volumePower: 51,
+    flow: [
+      ["大型科技", 61],
+      ["金融", 59],
+      ["工業", 57],
+      ["醫療", 46],
+      ["能源", 38]
+    ]
+  },
+  "^NDX": {
+    name: "Nasdaq 100 Index",
+    sector: "市場指數",
+    currency: "USD",
+    price: 19488.83,
+    changePct: 1.08,
+    dayLow: 19280.14,
+    dayHigh: 19540.7,
+    revenueGrowth: null,
+    grossMargin: null,
+    pe: 31.8,
+    forwardPe: null,
+    debtRatio: null,
+    institutionalBuy: 63,
+    institutionalSell: 37,
+    volumePower: 69,
+    flow: [
+      ["大型科技", 86],
+      ["半導體", 77],
+      ["AI 伺服器", 74],
+      ["雲端軟體", 66],
+      ["消費電子", 49]
+    ]
+  },
+  "^SOX": {
+    name: "PHLX Semiconductor Index",
+    sector: "市場指數",
+    currency: "USD",
+    price: 4872.15,
+    changePct: 1.34,
+    dayLow: 4798.63,
+    dayHigh: 4888.92,
+    revenueGrowth: null,
+    grossMargin: null,
+    pe: 28.6,
+    forwardPe: null,
+    debtRatio: null,
+    institutionalBuy: 65,
+    institutionalSell: 35,
+    volumePower: 73,
+    flow: [
+      ["半導體", 91],
+      ["AI 伺服器", 83],
+      ["大型科技", 58],
+      ["電子權值", 55],
+      ["雲端軟體", 34]
+    ]
+  },
   TSLA: {
     name: "Tesla Inc.",
     sector: "電動車",
@@ -145,59 +337,19 @@ const sampleStocks = {
   }
 };
 
-const quickSymbols = ["NVDA", "AAPL", "TSM", "2330.TW", "0050.TW"];
+const quickSymbols = ["NVDA", "2330.TW", "0050.TW", "006208.TW", "00878.TW", "^TWII", "^GSPC", "^SOX"];
 
 const taiwan50Constituents = [
-  { symbol: "1216.TW", name: "統一" },
-  { symbol: "1301.TW", name: "台塑" },
-  { symbol: "1303.TW", name: "南亞" },
-  { symbol: "2002.TW", name: "中鋼" },
-  { symbol: "2059.TW", name: "川湖" },
-  { symbol: "2207.TW", name: "和泰車" },
-  { symbol: "2301.TW", name: "光寶科" },
-  { symbol: "2303.TW", name: "聯電" },
   { symbol: "2308.TW", name: "台達電" },
+  { symbol: "2303.TW", name: "聯電" },
   { symbol: "2317.TW", name: "鴻海" },
-  { symbol: "2327.TW", name: "國巨*" },
   { symbol: "2330.TW", name: "台積電" },
-  { symbol: "2344.TW", name: "華邦電" },
-  { symbol: "2345.TW", name: "智邦" },
-  { symbol: "2357.TW", name: "華碩" },
-  { symbol: "2360.TW", name: "致茂" },
-  { symbol: "2368.TW", name: "金像電" },
   { symbol: "2382.TW", name: "廣達" },
-  { symbol: "2383.TW", name: "台光電" },
-  { symbol: "2395.TW", name: "研華" },
-  { symbol: "2408.TW", name: "南亞科" },
   { symbol: "2412.TW", name: "中華電" },
-  { symbol: "2449.TW", name: "京元電子" },
   { symbol: "2454.TW", name: "聯發科" },
   { symbol: "2603.TW", name: "長榮" },
-  { symbol: "2880.TW", name: "華南金" },
   { symbol: "2881.TW", name: "富邦金" },
-  { symbol: "2882.TW", name: "國泰金" },
-  { symbol: "2883.TW", name: "凱基金" },
-  { symbol: "2884.TW", name: "玉山金" },
-  { symbol: "2885.TW", name: "元大金" },
-  { symbol: "2886.TW", name: "兆豐金" },
-  { symbol: "2887.TW", name: "台新新光金" },
-  { symbol: "2890.TW", name: "永豐金" },
-  { symbol: "2891.TW", name: "中信金" },
-  { symbol: "2892.TW", name: "第一金" },
-  { symbol: "3008.TW", name: "大立光" },
-  { symbol: "3017.TW", name: "奇鋐" },
-  { symbol: "3037.TW", name: "欣興" },
-  { symbol: "3045.TW", name: "台灣大" },
-  { symbol: "3231.TW", name: "緯創" },
-  { symbol: "3653.TW", name: "健策" },
-  { symbol: "3661.TW", name: "世芯-KY" },
-  { symbol: "3711.TW", name: "日月光投控" },
-  { symbol: "4904.TW", name: "遠傳" },
-  { symbol: "5880.TW", name: "合庫金" },
-  { symbol: "6505.TW", name: "台塑化" },
-  { symbol: "6669.TW", name: "緯穎" },
-  { symbol: "6919.TW", name: "康霈*" },
-  { symbol: "7769.TW", name: "鴻勁" }
+  { symbol: "2882.TW", name: "國泰金" }
 ];
 
 const usTop10Constituents = [
@@ -226,11 +378,20 @@ const taiwanEtfSearchEntries = [
 
 const expandedUsSearchEntries = [
   { symbol: "AMD", name: "Advanced Micro Devices", aliases: ["AMD", "超微"] },
-  { symbol: "QQQ", name: "Invesco QQQ Trust", aliases: ["QQQ", "那斯達克100", "納斯達克100"] },
-  { symbol: "SPY", name: "SPDR S&P 500 ETF", aliases: ["SPY", "標普500", "S&P500"] },
-  { symbol: "VOO", name: "Vanguard S&P 500 ETF", aliases: ["VOO", "先鋒標普500"] },
+  { symbol: "QQQ", name: "Invesco QQQ Trust", aliases: ["QQQ", "Invesco QQQ", "QQQ ETF"] },
+  { symbol: "SPY", name: "SPDR S&P 500 ETF", aliases: ["SPY", "SPDR S&P 500 ETF"] },
+  { symbol: "VOO", name: "Vanguard S&P 500 ETF", aliases: ["VOO", "Vanguard S&P 500 ETF"] },
   { symbol: "TSM", name: "Taiwan Semiconductor ADR", aliases: ["TSM", "台積電ADR"] },
   { symbol: "NFLX", name: "Netflix", aliases: ["NFLX", "網飛"] }
+];
+
+const marketIndexEntries = [
+  { symbol: "^TWII", name: "台灣加權", currency: "TWD", aliases: ["台灣加權", "台灣加權指數", "加權指數", "台股大盤", "TAIEX"] },
+  { symbol: "^GSPC", name: "S&P 500", currency: "USD", aliases: ["標普500", "標普500指數", "S&P 500", "S&P500"] },
+  { symbol: "^IXIC", name: "Nasdaq", currency: "USD", aliases: ["Nasdaq", "NASDAQ", "那斯達克指數", "納斯達克指數", "NASDAQ Composite"] },
+  { symbol: "^DJI", name: "道瓊工業", currency: "USD", aliases: ["道瓊", "道瓊工業指數", "Dow Jones"] },
+  { symbol: "^NDX", name: "Nasdaq 100", currency: "USD", aliases: ["Nasdaq 100", "NASDAQ 100", "納斯達克100指數", "那斯達克100指數"] },
+  { symbol: "^SOX", name: "費半指數", currency: "USD", aliases: ["費半", "費城半導體", "費城半導體指數", "SOX"] }
 ];
 
 function normalizeLookupKey(value) {
@@ -249,7 +410,12 @@ const searchDirectory = [
     aliases: [name]
   })),
   ...taiwanEtfSearchEntries,
-  ...expandedUsSearchEntries
+  ...expandedUsSearchEntries,
+  ...marketIndexEntries.map(({ symbol, name, aliases }) => ({
+    symbol,
+    name,
+    aliases
+  }))
 ];
 
 const symbolAliasMap = new Map();
@@ -266,6 +432,7 @@ const symbolSuggestions = [
     ...Object.keys(sampleStocks),
     ...taiwan50Constituents.map((item) => item.symbol),
     ...usTop10Constituents.map((item) => item.symbol),
+    ...marketIndexEntries.map((item) => item.symbol),
     ...searchDirectory.map((item) => item.symbol)
   ])
 ].map((symbol) => ({
@@ -302,6 +469,19 @@ const usTop10QuoteState = new Map(
   ])
 );
 
+const marketIndexQuoteState = new Map(
+  marketIndexEntries.map(({ symbol, currency }) => [
+    symbol,
+    {
+      loading: true,
+      price: null,
+      changePct: null,
+      currency,
+      live: false
+    }
+  ])
+);
+
 let activeChartRange = "3M";
 let activeSymbol = "";
 let renderRequestId = 0;
@@ -329,12 +509,21 @@ const elements = {
   form: document.querySelector("#stockForm"),
   input: document.querySelector("#symbolInput"),
   themeToggle: document.querySelector("#themeToggle"),
+  watchQuickForm: document.querySelector("#watchQuickForm"),
+  watchQuickInput: document.querySelector("#watchQuickInput"),
+  watchlist: document.querySelector("#watchlist"),
+  watchAddButton: document.querySelector("#watchAddButton"),
+  watchResetButton: document.querySelector("#watchResetButton"),
   currentDateText: document.querySelector("#currentDateText"),
+  indexHero: document.querySelector("#indexHero"),
+  indexHeroToolbar: document.querySelector("#indexHeroToolbar"),
   suggestions: document.querySelector("#symbolSuggestions"),
   taiwan50Count: document.querySelector("#taiwan50Count"),
   taiwan50List: document.querySelector("#taiwan50List"),
   usTop10Count: document.querySelector("#usTop10Count"),
   usTop10List: document.querySelector("#usTop10List"),
+  marketIndexCount: document.querySelector("#marketIndexCount"),
+  marketIndexList: document.querySelector("#marketIndexList"),
   companyName: document.querySelector("#companyName"),
   tickerText: document.querySelector("#tickerText"),
   sectorText: document.querySelector("#sectorText"),
@@ -380,6 +569,13 @@ const configuredApiBase = (() => {
 })();
 const API_BASE = isFilePreview ? "http://127.0.0.1:4173" : isLocalRuntime ? "" : configuredApiBase || null;
 const THEME_STORAGE_KEY = "stock-lens-theme";
+const WATCHLIST_STORAGE_KEY = "stock-lens-watchlist";
+const INDEX_HERO_COUNT_KEY = "stock-lens-index-hero-count";
+const MAX_WATCHLIST_ITEMS = 10;
+const heroIndexSymbols = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
+
+let customWatchSymbols = [];
+let heroIndexCount = 3;
 
 function getCssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -403,6 +599,152 @@ function syncThemeToggleLabel() {
   const theme = document.body.dataset.theme === "light" ? "light" : "dark";
   elements.themeToggle.textContent = theme === "dark" ? "深色" : "淺色";
   elements.themeToggle.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+}
+
+function getDisplaySymbol(symbol) {
+  if (symbol.startsWith("^")) return symbol.slice(1);
+  return symbol.replace(".TW", "");
+}
+
+function getWatchLabel(symbol) {
+  switch (symbol) {
+    case "2330.TW":
+      return "台積電";
+    case "^TWII":
+      return "加權指數";
+    case "^GSPC":
+      return "S&P 500";
+    case "^SOX":
+      return "費半";
+    case "^IXIC":
+      return "Nasdaq";
+    case "^DJI":
+      return "道瓊";
+    case "^NDX":
+      return "Nasdaq 100";
+    default: {
+      const entry = searchDirectory.find((item) => item.symbol === symbol);
+      return entry?.name?.length && entry.name.length <= 10 ? entry.name : getDisplaySymbol(symbol);
+    }
+  }
+}
+
+function normalizeWatchlist(symbols) {
+  const seen = new Set();
+  return symbols
+    .map((symbol) => normalizeUserSymbol(symbol))
+    .filter((symbol) => symbol && symbolAliasMap.has(normalizeLookupKey(symbol)))
+    .filter((symbol) => {
+      if (seen.has(symbol)) return false;
+      seen.add(symbol);
+      return true;
+    })
+    .slice(0, MAX_WATCHLIST_ITEMS);
+}
+
+function saveWatchlist() {
+  localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(customWatchSymbols));
+}
+
+function loadWatchlist() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(WATCHLIST_STORAGE_KEY) || "null");
+    if (Array.isArray(stored)) return normalizeWatchlist(stored);
+  } catch {
+    // ignore malformed storage
+  }
+  return normalizeWatchlist(quickSymbols);
+}
+
+function renderWatchlist() {
+  elements.watchlist.innerHTML = customWatchSymbols
+    .map(
+      (symbol) => `
+        <div class="watch-item${symbol === activeSymbol ? " active" : ""}">
+          <button type="button" class="watch-symbol" data-symbol="${symbol}">${getWatchLabel(symbol)}</button>
+          <button type="button" class="watch-remove" data-watch-remove="${symbol}" aria-label="移除 ${symbol}">×</button>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function renderIndexHero() {
+  elements.indexHero.innerHTML = heroIndexSymbols
+    .slice(0, heroIndexCount)
+    .map((symbol) => {
+      const quote = marketIndexQuoteState.get(symbol) || {};
+      const changeClass = hasNumber(quote.changePct) ? (quote.changePct >= 0 ? "positive" : "negative") : "muted";
+      const changeText = hasNumber(quote.changePct)
+        ? `${quote.changePct >= 0 ? "+" : ""}${quote.changePct.toFixed(2)}%`
+        : quote.loading
+          ? "更新中"
+          : MISSING_VALUE_TEXT;
+      const name = getWatchLabel(symbol);
+      return `
+        <button type="button" class="index-hero-item" data-symbol="${symbol}" aria-label="${symbol} ${name}">
+          <div class="index-hero-copy">
+            <strong>${name}</strong>
+            <span>${formatCompactPrice(quote.currency || "USD", quote.price)}</span>
+          </div>
+          <div class="index-hero-spark">
+            ${renderMiniCandleSvg(symbol, quote.currency || "USD", quote.price, quote.changePct)}
+          </div>
+          <small class="${changeClass}">${changeText}</small>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function syncIndexHeroToolbar() {
+  elements.indexHeroToolbar.querySelectorAll("[data-hero-count]").forEach((button) => {
+    button.classList.toggle("active", Number(button.dataset.heroCount) === heroIndexCount);
+  });
+}
+
+function loadHeroIndexCount() {
+  const stored = Number(localStorage.getItem(INDEX_HERO_COUNT_KEY) || 3);
+  return [3, 4, 6].includes(stored) ? stored : 3;
+}
+
+function setHeroIndexCount(value) {
+  heroIndexCount = [3, 4, 6].includes(value) ? value : 3;
+  localStorage.setItem(INDEX_HERO_COUNT_KEY, String(heroIndexCount));
+  syncIndexHeroToolbar();
+  renderIndexHero();
+}
+
+function addToWatchlist(symbol) {
+  const normalized = normalizeUserSymbol(symbol);
+  if (!normalized || !symbolAliasMap.has(normalizeLookupKey(normalized))) return false;
+  customWatchSymbols = normalizeWatchlist([normalized, ...customWatchSymbols.filter((item) => item !== normalized)]);
+  saveWatchlist();
+  renderWatchlist();
+  return true;
+}
+
+function searchAndAddToWatchlist(symbol) {
+  const normalized = normalizeUserSymbol(symbol);
+  if (!normalized || !symbolAliasMap.has(normalizeLookupKey(normalized))) return false;
+  addToWatchlist(normalized);
+  elements.input.value = normalized;
+  elements.watchQuickInput.value = "";
+  renderStock(normalized);
+  return true;
+}
+
+function removeFromWatchlist(symbol) {
+  customWatchSymbols = customWatchSymbols.filter((item) => item !== symbol);
+  if (!customWatchSymbols.length) customWatchSymbols = normalizeWatchlist(quickSymbols);
+  saveWatchlist();
+  renderWatchlist();
+}
+
+function resetWatchlist() {
+  customWatchSymbols = normalizeWatchlist(quickSymbols);
+  saveWatchlist();
+  renderWatchlist();
 }
 
 function applyChartTheme() {
@@ -1129,6 +1471,7 @@ function renderStockLibrary(items, stateMap, countElement, container) {
     .map(
       ({ symbol, name }) => {
         const quote = stateMap.get(symbol) || {};
+        const displaySymbol = getDisplaySymbol(symbol);
         const changeClass = hasNumber(quote.changePct) ? (quote.changePct >= 0 ? "positive" : "negative") : "muted";
         const changeText = hasNumber(quote.changePct)
           ? `${quote.changePct >= 0 ? "+" : ""}${quote.changePct.toFixed(2)}%`
@@ -1140,7 +1483,7 @@ function renderStockLibrary(items, stateMap, countElement, container) {
         <button type="button" data-symbol="${symbol}" aria-label="${symbol} ${name}">
           <div class="stock-main">
             <div class="stock-copy">
-              <strong>${symbol.replace(".TW", "")}</strong>
+              <strong>${displaySymbol}</strong>
               <span>${name}</span>
             </div>
             <div class="stock-spark">
@@ -1161,6 +1504,9 @@ function renderStockLibrary(items, stateMap, countElement, container) {
 function updateActiveSymbolButtons(symbol) {
   document.querySelectorAll("[data-symbol]").forEach((button) => {
     button.classList.toggle("active", button.dataset.symbol === symbol);
+  });
+  document.querySelectorAll(".watch-item").forEach((item) => {
+    item.classList.toggle("active", item.querySelector(".watch-symbol")?.dataset.symbol === symbol);
   });
 }
 
@@ -1272,6 +1618,62 @@ async function hydrateUsTop10Quotes() {
   updateActiveSymbolButtons(activeSymbol);
 }
 
+async function hydrateMarketIndexQuotes() {
+  if (API_BASE === null) {
+    marketIndexEntries.forEach(({ symbol, name, currency }) => {
+      const base = sampleStocks[symbol] || {};
+      marketIndexQuoteState.set(symbol, {
+        loading: false,
+        price: base.price ?? null,
+        changePct: base.changePct ?? null,
+        currency: base.currency || currency || "USD",
+        live: false,
+        name: base.name || name
+      });
+    });
+    renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
+    renderIndexHero();
+    updateActiveSymbolButtons(activeSymbol);
+    return;
+  }
+
+  try {
+    const query = encodeURIComponent(marketIndexEntries.map(({ symbol }) => symbol).join(","));
+    const response = await fetch(`${API_BASE}/api/watchlist?symbols=${query}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("watchlist unavailable");
+    const payload = await response.json();
+
+    for (const item of payload.stocks || []) {
+      const previous = marketIndexQuoteState.get(item.symbol) || {};
+      marketIndexQuoteState.set(item.symbol, {
+        ...previous,
+        loading: false,
+        price: item.price ?? null,
+        changePct: item.changePct ?? null,
+        currency: item.currency || previous.currency || "USD",
+        live: Boolean(item.live)
+      });
+    }
+  } catch {
+    marketIndexEntries.forEach(({ symbol, name, currency }) => {
+      const base = sampleStocks[symbol] || {};
+      marketIndexQuoteState.set(symbol, {
+        loading: false,
+        price: base.price ?? null,
+        changePct: base.changePct ?? null,
+        currency: base.currency || currency || "USD",
+        live: false,
+        name: base.name || name
+      });
+    });
+  }
+
+  await prefetchMiniCandles(marketIndexEntries, marketIndexQuoteState, marketIndexEntries.length);
+  renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
+  renderIndexHero();
+  updateActiveSymbolButtons(activeSymbol);
+}
+
 async function prefetchMiniCandles(items, stateMap, count = items.length) {
   const subset = items.slice(0, count);
   await Promise.all(
@@ -1364,10 +1766,17 @@ async function renderStock(symbol) {
   renderCandles(stock, candlePayload);
   renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Count, elements.taiwan50List);
   renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
+  renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
+  renderIndexHero();
   updateActiveSymbolButtons(normalized);
 }
 
 document.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-watch-remove]");
+  if (removeButton) {
+    removeFromWatchlist(removeButton.dataset.watchRemove);
+    return;
+  }
   const button = event.target.closest("[data-symbol]");
   if (!button) return;
   elements.input.value = button.dataset.symbol;
@@ -1384,6 +1793,27 @@ elements.themeToggle.addEventListener("click", () => {
   applyTheme(nextTheme);
 });
 
+elements.watchAddButton.addEventListener("click", () => {
+  if (addToWatchlist(elements.input.value)) {
+    elements.input.value = normalizeUserSymbol(elements.input.value);
+  }
+});
+
+elements.watchQuickForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  searchAndAddToWatchlist(elements.watchQuickInput.value);
+});
+
+elements.watchResetButton.addEventListener("click", () => {
+  resetWatchlist();
+});
+
+elements.indexHeroToolbar.querySelectorAll("[data-hero-count]").forEach((button) => {
+  button.addEventListener("click", () => {
+    setHeroIndexCount(Number(button.dataset.heroCount));
+  });
+});
+
 elements.chartToolbar.querySelectorAll("[data-range]").forEach((button) => {
   button.addEventListener("click", () => {
     activeChartRange = button.dataset.range;
@@ -1397,10 +1827,17 @@ elements.chartToolbar.querySelectorAll("[data-range]").forEach((button) => {
 });
 
 initializeTheme();
+customWatchSymbols = loadWatchlist();
+heroIndexCount = loadHeroIndexCount();
 renderCurrentDate();
 renderSuggestions();
+renderWatchlist();
+syncIndexHeroToolbar();
 renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Count, elements.taiwan50List);
 renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
+renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
+renderIndexHero();
 hydrateTaiwan50Quotes();
 hydrateUsTop10Quotes();
+hydrateMarketIndexQuotes();
 renderStock(elements.input.value);
