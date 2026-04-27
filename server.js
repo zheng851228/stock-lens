@@ -585,7 +585,7 @@ function applyApiCorsHeaders(request, response) {
 }
 
 function sanitizeSymbol(symbol) {
-  const normalized = symbol.trim().toUpperCase().replace(/[^A-Z0-9.=-]/g, "");
+  const normalized = symbol.trim().toUpperCase().replace(/[^A-Z0-9.^=-]/g, "");
   if (/^\d{4,6}$/.test(normalized)) {
     return `${normalized}.TW`;
   }
