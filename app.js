@@ -574,7 +574,8 @@ const THEME_STORAGE_KEY = "stock-lens-theme";
 const WATCHLIST_STORAGE_KEY = "stock-lens-watchlist";
 const INDEX_HERO_COUNT_KEY = "stock-lens-index-hero-count";
 const INDEX_HERO_SYMBOLS_KEY = "stock-lens-index-hero-symbols";
-const LIVE_REFRESH_INTERVAL_MS = 60 * 1000;
+const LIVE_QUOTE_REFRESH_INTERVAL_MS = 20 * 1000;
+const LIVE_LIST_REFRESH_INTERVAL_MS = 60 * 1000;
 const STOCK_SNAPSHOT_STORAGE_PREFIX = "stock-lens-stock-snapshot:";
 const MAX_WATCHLIST_ITEMS = 10;
 const ALL_HERO_INDEX_SYMBOLS = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
@@ -583,6 +584,8 @@ let customWatchSymbols = [];
 let heroIndexCount = 3;
 let heroIndexSymbols = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
 let liveRefreshTimer = null;
+let liveRefreshTick = 0;
+let sidebarHydrationTimer = null;
 
 function getCssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -759,11 +762,7 @@ function applyStockToUi(stock, normalized) {
   elements.buyMeter.value = stock.institutionalBuy || 50;
   elements.sellMeter.value = stock.institutionalSell || 50;
   elements.volumeMeter.value = stock.volumePower || 50;
-  elements.dataStatus.textContent = stock.live
-    ? `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "基本面資料不足，營收與估值欄位以資料不足顯示。"}${stock.monthlyRevenueSource ? ` 月營收來自 ${stock.monthlyRevenueSource}。` : ` ${MISSING_MONTHLY_REVENUE_TEXT}。`} 即時刷新中。`
-    : stock.source === "公開展示模式"
-      ? `目前是可分享的公開展示頁，價格與分析使用示範資料；${configuredApiBase ? `已設定公開 API ${configuredApiBase}，但目前未成功取回資料。` : "請先部署公開 API，並在 config.js 設定 apiBase。"}`
-      : `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${formatMissingReason(stock.warnings[0])}` : ""}`;
+  elements.dataStatus.textContent = buildDataStatus(stock);
 
   renderFlow(stock.flow);
   renderMetrics(stock);
@@ -789,15 +788,27 @@ async function refreshAllQuotes() {
   await Promise.allSettled([hydrateTaiwan50Quotes(), hydrateUsTop10Quotes(), hydrateMarketIndexQuotes()]);
 }
 
+function scheduleSidebarHydration(delay = 900) {
+  if (sidebarHydrationTimer) clearTimeout(sidebarHydrationTimer);
+  sidebarHydrationTimer = setTimeout(() => {
+    sidebarHydrationTimer = null;
+    refreshAllQuotes();
+  }, delay);
+}
+
 function startLiveRefresh() {
   if (liveRefreshTimer) clearInterval(liveRefreshTimer);
+  liveRefreshTick = 0;
   liveRefreshTimer = setInterval(() => {
     if (document.visibilityState === "hidden") return;
-    refreshAllQuotes();
+    liveRefreshTick += 1;
     if (activeSymbol) {
-      renderStock(activeSymbol, { silent: true });
+      renderStock(activeSymbol, { silent: true, skipCandles: true });
     }
-  }, LIVE_REFRESH_INTERVAL_MS);
+    if (liveRefreshTick === 1 || (liveRefreshTick * LIVE_QUOTE_REFRESH_INTERVAL_MS) % LIVE_LIST_REFRESH_INTERVAL_MS === 0) {
+      scheduleSidebarHydration(1200);
+    }
+  }, LIVE_QUOTE_REFRESH_INTERVAL_MS);
 }
 
 function renderIndexHeroSelector() {
@@ -966,6 +977,20 @@ function formatMissingReason(reason) {
   }
 
   return message;
+}
+
+function formatRefreshCadence() {
+  return `主標的每 ${Math.round(LIVE_QUOTE_REFRESH_INTERVAL_MS / 1000)} 秒刷新，清單每 ${Math.round(LIVE_LIST_REFRESH_INTERVAL_MS / 1000)} 秒同步一次`;
+}
+
+function buildDataStatus(stock) {
+  if (stock.live) {
+    return `已串接 ${stock.source}${stock.quoteDate ? `（報價時間 ${formatQuoteTimestamp(stock)}）` : ""}；${stock.fundamentalsLive ? `基本面來自 ${stock.fundamentalsSource}。` : "基本面資料不足，營收與估值欄位以資料不足顯示。"}${stock.monthlyRevenueSource ? ` 月營收來自 ${stock.monthlyRevenueSource}。` : ` ${MISSING_MONTHLY_REVENUE_TEXT}。`} ${formatRefreshCadence()}。`;
+  }
+  if (stock.source === "公開展示模式") {
+    return `目前是可分享的公開展示頁，價格與分析使用示範資料；${configuredApiBase ? `已設定公開 API ${configuredApiBase}，但目前未成功取回資料。` : "請先部署公開 API，並在 config.js 設定 apiBase。"} ${formatRefreshCadence()}。`;
+  }
+  return `財經 API 暫時無法連線，已切換示範資料。${stock.warnings?.[0] ? `原因：${formatMissingReason(stock.warnings[0])}` : ""}`;
 }
 
 function formatMoney(stock, value) {
@@ -1837,7 +1862,7 @@ async function prefetchMiniCandles(items, stateMap, count = items.length) {
 }
 
 async function renderStock(symbol, options = {}) {
-  const { silent = false } = options;
+  const { silent = false, skipCandles = false } = options;
   const normalized = normalizeUserSymbol(symbol);
   const requestId = (renderRequestId += 1);
   activeSymbol = normalized;
@@ -1857,9 +1882,11 @@ async function renderStock(symbol, options = {}) {
 
   if (!silent) {
     elements.dataStatus.textContent = "正在呼叫本機財經 API，優先整理即時報價，K 線稍後補齊。";
-    elements.chartStatus.textContent = "整理歷史日線中";
-    elements.chartLegend.textContent = "OHLC --";
-    elements.chartSurface.innerHTML = '<div class="chart-empty loading">載入 K 線資料中</div>';
+    if (!skipCandles) {
+      elements.chartStatus.textContent = "整理歷史日線中";
+      elements.chartLegend.textContent = "OHLC --";
+      elements.chartSurface.innerHTML = '<div class="chart-empty loading">載入 K 線資料中</div>';
+    }
     const cachedStock = loadStockSnapshot(normalized, baseStock);
     if (cachedStock) {
       applyStockToUi(cachedStock, normalized);
@@ -1868,12 +1895,20 @@ async function renderStock(symbol, options = {}) {
   }
   updateActiveSymbolButtons(normalized);
   const stockPromise = fetchStockFromApi(normalized, baseStock);
-  const candlePromise = fetchCandlesFromApi(normalized, baseStock, activeChartRange);
+  const candlePromise = skipCandles ? null : fetchCandlesFromApi(normalized, baseStock, activeChartRange);
   const rawStock = await stockPromise;
   if (requestId !== renderRequestId) return;
   const stock = normalizeStockForUi(rawStock, baseStock, normalized);
   applyStockToUi(stock, normalized);
   saveStockSnapshot(normalized, stock);
+  if (skipCandles) {
+    renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Count, elements.taiwan50List);
+    renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
+    renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
+    renderIndexHero();
+    updateActiveSymbolButtons(normalized);
+    return;
+  }
   const candlePayload = await candlePromise;
   if (requestId !== renderRequestId) return;
   renderCandles(stock, candlePayload);
@@ -1960,8 +1995,7 @@ renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Co
 renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
 renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);
 renderIndexHero();
-hydrateTaiwan50Quotes();
-hydrateUsTop10Quotes();
-hydrateMarketIndexQuotes();
-renderStock(elements.input.value);
+renderStock(elements.input.value).finally(() => {
+  scheduleSidebarHydration();
+});
 startLiveRefresh();
