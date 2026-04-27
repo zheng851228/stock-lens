@@ -31,6 +31,9 @@
               <button type="button" data-hero-count="6">6</button>
             </div>
 
+            <div class="index-hero-selector" id="indexHeroSelector" aria-label="左上指數自選"></div>
+            <p class="index-hero-hint">點選可自選左上指數卡內容。</p>
+
             <div class="index-hero" id="indexHero"></div>
 
             <form id="stockForm" class="hidden-state-form" aria-hidden="true">
@@ -97,6 +100,7 @@
               <input id="watchQuickInput" type="text" autocomplete="off" list="symbolSuggestions" placeholder="搜尋股票、ETF、指數後加入" />
               <button type="submit" class="watch-tool-button">搜尋加入</button>
             </form>
+            <p class="watch-feedback" id="watchFeedback" aria-live="polite"></p>
             <div class="watch-tools">
               <button type="button" class="watch-tool-button" id="watchAddButton">加入目前</button>
               <button type="button" class="watch-tool-button subtle" id="watchResetButton">重設</button>

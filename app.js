@@ -511,12 +511,14 @@ const elements = {
   themeToggle: document.querySelector("#themeToggle"),
   watchQuickForm: document.querySelector("#watchQuickForm"),
   watchQuickInput: document.querySelector("#watchQuickInput"),
+  watchFeedback: document.querySelector("#watchFeedback"),
   watchlist: document.querySelector("#watchlist"),
   watchAddButton: document.querySelector("#watchAddButton"),
   watchResetButton: document.querySelector("#watchResetButton"),
   currentDateText: document.querySelector("#currentDateText"),
   indexHero: document.querySelector("#indexHero"),
   indexHeroToolbar: document.querySelector("#indexHeroToolbar"),
+  indexHeroSelector: document.querySelector("#indexHeroSelector"),
   suggestions: document.querySelector("#symbolSuggestions"),
   taiwan50Count: document.querySelector("#taiwan50Count"),
   taiwan50List: document.querySelector("#taiwan50List"),
@@ -571,11 +573,13 @@ const API_BASE = isFilePreview ? "http://127.0.0.1:4173" : isLocalRuntime ? "" :
 const THEME_STORAGE_KEY = "stock-lens-theme";
 const WATCHLIST_STORAGE_KEY = "stock-lens-watchlist";
 const INDEX_HERO_COUNT_KEY = "stock-lens-index-hero-count";
+const INDEX_HERO_SYMBOLS_KEY = "stock-lens-index-hero-symbols";
 const MAX_WATCHLIST_ITEMS = 10;
-const heroIndexSymbols = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
+const ALL_HERO_INDEX_SYMBOLS = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
 
 let customWatchSymbols = [];
 let heroIndexCount = 3;
+let heroIndexSymbols = ["^TWII", "^GSPC", "^IXIC", "^SOX", "^DJI", "^NDX"];
 
 function getCssVar(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -697,6 +701,13 @@ function renderIndexHero() {
     .join("");
 }
 
+function renderIndexHeroSelector() {
+  elements.indexHeroSelector.innerHTML = ALL_HERO_INDEX_SYMBOLS.map((symbol) => {
+    const active = heroIndexSymbols.includes(symbol);
+    return `<button type="button" class="${active ? "active" : ""}" data-hero-symbol="${symbol}">${getWatchLabel(symbol)}</button>`;
+  }).join("");
+}
+
 function syncIndexHeroToolbar() {
   elements.indexHeroToolbar.querySelectorAll("[data-hero-count]").forEach((button) => {
     button.classList.toggle("active", Number(button.dataset.heroCount) === heroIndexCount);
@@ -708,10 +719,38 @@ function loadHeroIndexCount() {
   return [3, 4, 6].includes(stored) ? stored : 3;
 }
 
+function loadHeroIndexSymbols() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(INDEX_HERO_SYMBOLS_KEY) || "null");
+    if (Array.isArray(stored)) {
+      const normalized = stored.filter((symbol) => ALL_HERO_INDEX_SYMBOLS.includes(symbol));
+      if (normalized.length) {
+        return [...new Set(normalized)];
+      }
+    }
+  } catch {
+    // ignore malformed storage
+  }
+  return [...ALL_HERO_INDEX_SYMBOLS];
+}
+
 function setHeroIndexCount(value) {
   heroIndexCount = [3, 4, 6].includes(value) ? value : 3;
   localStorage.setItem(INDEX_HERO_COUNT_KEY, String(heroIndexCount));
   syncIndexHeroToolbar();
+  renderIndexHero();
+}
+
+function toggleHeroIndexSymbol(symbol) {
+  if (!ALL_HERO_INDEX_SYMBOLS.includes(symbol)) return;
+  if (heroIndexSymbols.includes(symbol)) {
+    if (heroIndexSymbols.length === 1) return;
+    heroIndexSymbols = heroIndexSymbols.filter((item) => item !== symbol);
+  } else {
+    heroIndexSymbols = ALL_HERO_INDEX_SYMBOLS.filter((item) => [...heroIndexSymbols, symbol].includes(item));
+  }
+  localStorage.setItem(INDEX_HERO_SYMBOLS_KEY, JSON.stringify(heroIndexSymbols));
+  renderIndexHeroSelector();
   renderIndexHero();
 }
 
@@ -726,10 +765,16 @@ function addToWatchlist(symbol) {
 
 function searchAndAddToWatchlist(symbol) {
   const normalized = normalizeUserSymbol(symbol);
-  if (!normalized || !symbolAliasMap.has(normalizeLookupKey(normalized))) return false;
+  if (!normalized || !symbolAliasMap.has(normalizeLookupKey(normalized))) {
+    elements.watchFeedback.textContent = "找不到這個代號，請試試股票代碼、ETF 或指數名稱。";
+    elements.watchFeedback.className = "watch-feedback error";
+    return false;
+  }
   addToWatchlist(normalized);
   elements.input.value = normalized;
   elements.watchQuickInput.value = "";
+  elements.watchFeedback.textContent = `已加入 ${getWatchLabel(normalized)}`;
+  elements.watchFeedback.className = "watch-feedback success";
   renderStock(normalized);
   return true;
 }
@@ -1796,6 +1841,8 @@ elements.themeToggle.addEventListener("click", () => {
 elements.watchAddButton.addEventListener("click", () => {
   if (addToWatchlist(elements.input.value)) {
     elements.input.value = normalizeUserSymbol(elements.input.value);
+    elements.watchFeedback.textContent = `已加入 ${getWatchLabel(normalizeUserSymbol(elements.input.value))}`;
+    elements.watchFeedback.className = "watch-feedback success";
   }
 });
 
@@ -1814,6 +1861,12 @@ elements.indexHeroToolbar.querySelectorAll("[data-hero-count]").forEach((button)
   });
 });
 
+elements.indexHeroSelector.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-hero-symbol]");
+  if (!button) return;
+  toggleHeroIndexSymbol(button.dataset.heroSymbol);
+});
+
 elements.chartToolbar.querySelectorAll("[data-range]").forEach((button) => {
   button.addEventListener("click", () => {
     activeChartRange = button.dataset.range;
@@ -1829,10 +1882,12 @@ elements.chartToolbar.querySelectorAll("[data-range]").forEach((button) => {
 initializeTheme();
 customWatchSymbols = loadWatchlist();
 heroIndexCount = loadHeroIndexCount();
+heroIndexSymbols = loadHeroIndexSymbols();
 renderCurrentDate();
 renderSuggestions();
 renderWatchlist();
 syncIndexHeroToolbar();
+renderIndexHeroSelector();
 renderStockLibrary(taiwan50Constituents, taiwan50QuoteState, elements.taiwan50Count, elements.taiwan50List);
 renderStockLibrary(usTop10Constituents, usTop10QuoteState, elements.usTop10Count, elements.usTop10List);
 renderStockLibrary(marketIndexEntries, marketIndexQuoteState, elements.marketIndexCount, elements.marketIndexList);

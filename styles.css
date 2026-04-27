@@ -192,12 +192,50 @@ button {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--panel-soft);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.index-hero-toolbar button:hover {
+  transform: translateY(-1px);
 }
 
 .index-hero-toolbar button.active {
   color: var(--text);
   border-color: rgba(89, 212, 232, 0.24);
   background: linear-gradient(135deg, rgba(75, 150, 255, 0.28), rgba(89, 212, 232, 0.14));
+}
+
+.index-hero-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.index-hero-selector button {
+  padding: 7px 10px;
+  color: var(--text-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-soft);
+  cursor: pointer;
+}
+
+.index-hero-selector button.active {
+  color: var(--text);
+  border-color: rgba(89, 212, 232, 0.24);
+  background: linear-gradient(135deg, rgba(75, 150, 255, 0.28), rgba(89, 212, 232, 0.14));
+}
+
+.index-hero-hint {
+  margin: 0 0 12px;
+  color: var(--text-faint);
+  font-size: 12px;
 }
 
 .index-hero-item {
@@ -379,6 +417,7 @@ button {
 .watch-tools {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
 }
 
@@ -443,6 +482,21 @@ button {
   margin: 10px 2px 0;
   color: var(--text-faint);
   font-size: 12px;
+}
+
+.watch-feedback {
+  min-height: 20px;
+  margin: -2px 2px 10px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.watch-feedback.success {
+  color: var(--green);
+}
+
+.watch-feedback.error {
+  color: var(--red);
 }
 
 .library-card {
@@ -1030,6 +1084,28 @@ meter::-moz-meter-bar {
   .metric-table,
   .profile-grid {
     grid-template-columns: 1fr;
+  }
+
+  .watch-search {
+    grid-template-columns: 1fr;
+  }
+
+  .index-hero-toolbar {
+    display: flex;
+    width: 100%;
+  }
+
+  .index-hero-toolbar button {
+    flex: 1 1 0;
+  }
+
+  .index-hero-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .index-hero-spark {
+    width: 100%;
   }
 
   .stock-main {
