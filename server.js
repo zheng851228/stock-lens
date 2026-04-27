@@ -1123,6 +1123,60 @@ async function fetchYahooQuote(symbol) {
   return { quote, summary };
 }
 
+async function fetchYahooIndexQuote(symbol, base) {
+  const params = new URLSearchParams({
+    interval: "1d",
+    range: "5d",
+    includeAdjustedClose: "true"
+  });
+  const json = await fetchJson(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`);
+  const result = json?.chart?.result?.[0];
+  const meta = result?.meta || {};
+  const timestamps = Array.isArray(result?.timestamp) ? result.timestamp : [];
+  const quote = result?.indicators?.quote?.[0] || {};
+  const latestIndex = timestamps.length - 1;
+  const latestOpen = sanitizeNumericField(quote.open?.[latestIndex]);
+  const latestHigh = sanitizeNumericField(quote.high?.[latestIndex]);
+  const latestLow = sanitizeNumericField(quote.low?.[latestIndex]);
+  const latestClose = sanitizeNumericField(quote.close?.[latestIndex]);
+  const regularMarketPrice = sanitizeNumericField(meta.regularMarketPrice);
+  const price = regularMarketPrice ?? latestClose;
+
+  if (!price || price <= 0) {
+    throw new Error("Yahoo index quote unavailable");
+  }
+
+  const previousClose = sanitizeNumericField(meta.chartPreviousClose) ?? sanitizeNumericField(meta.previousClose);
+  const changePct = previousClose && previousClose > 0
+    ? ((price - previousClose) / previousClose) * 100
+    : base.changePct;
+
+  return {
+    ...base,
+    symbol,
+    name: meta.shortName || meta.longName || base.name,
+    assetType: "Index",
+    exchange: meta.exchangeName || base.exchange,
+    currency: meta.currency || base.currency,
+    price,
+    open: latestOpen,
+    previousClose,
+    volume: sanitizeNumericField(quote.volume?.[latestIndex]),
+    averageVolume: null,
+    changePct: numberOrFallback(changePct, base.changePct),
+    dayLow: latestLow ?? base.dayLow,
+    dayHigh: latestHigh ?? base.dayHigh,
+    marketCap: null,
+    week52Low: sanitizeNumericField(meta.fiftyTwoWeekLow) ?? base.week52Low,
+    week52High: sanitizeNumericField(meta.fiftyTwoWeekHigh) ?? base.week52High,
+    fetchedAt: new Date().toISOString(),
+    live: true,
+    source: "Yahoo Finance chart",
+    fundamentalsSource: null,
+    fundamentalsLive: false
+  };
+}
+
 async function fetchFinnhubStock(symbol, base) {
   const apiKey = process.env.FINNHUB_API_KEY;
   if (!apiKey) throw new Error("Finnhub API key not configured");
@@ -1472,6 +1526,14 @@ async function getStockData(symbol) {
     return await fetchFinnhubStock(symbol, base);
   } catch (error) {
     warnings.push(error.message);
+  }
+
+  if (symbol.startsWith("^")) {
+    try {
+      return await fetchYahooIndexQuote(symbol, base);
+    } catch (error) {
+      warnings.push(error.message);
+    }
   }
 
   try {
